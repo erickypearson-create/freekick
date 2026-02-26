@@ -1,12 +1,15 @@
 :root {
   color-scheme: dark;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 body {
   margin: 0;
   background: radial-gradient(circle at top, #1c2f3d 0%, #0b1117 60%, #080b0f 100%);
   color: #f0f6ff;
+  background: #102314;
+  color: #eef6ed;
 }
 
 .layout {
@@ -16,6 +19,9 @@ body {
   padding: 1rem;
   max-width: 1400px;
   margin: 0 auto;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
 }
 
 .game-panel,
@@ -74,6 +80,19 @@ canvas {
   border: 2px solid #8eb0cb;
   background: #0d1d11;
   display: block;
+  background: #1a3220;
+  border: 1px solid #4c7858;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+canvas {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid #dcefd6;
+  background: linear-gradient(#2f8c4f, #1f6a3a);
 }
 
 .hud {
@@ -88,6 +107,8 @@ canvas {
 
 .controls {
   padding: 1rem;
+  gap: 0.25rem;
+  font-size: 0.95rem;
 }
 
 .controls h2 {
@@ -97,6 +118,7 @@ canvas {
 .instructions {
   color: #cfe8ff;
   line-height: 1.4;
+  color: #c6e4ca;
 }
 
 button {
@@ -108,6 +130,12 @@ button {
   background: linear-gradient(180deg, #1452ae, #0c3677);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
   margin: 0.2rem 0.25rem 0.2rem 0;
+  border: 1px solid #95cea1;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: #2a5b35;
+  color: #f2fff5;
+  margin: 0.25rem 0.25rem 0.25rem 0;
   cursor: pointer;
 }
 
@@ -123,6 +151,17 @@ button:hover {
 .summary {
   color: #d9ecff;
   font-size: 0.94rem;
+  background: #327040;
+}
+
+.answers {
+  margin-top: 0.75rem;
+}
+
+.summary {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: #d7f3dd;
 }
 
 .hidden {
@@ -130,6 +169,7 @@ button:hover {
 }
 
 @media (max-width: 960px) {
+@media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
   }
