@@ -119,6 +119,40 @@ canvas {
   font-size: 1.4rem;
 }
 
+.controls h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.hint {
+  margin-top: 0;
+  color: #2f5568;
+}
+
+.upload-box {
+  border: 2px solid #b9deec;
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: #f3fbff;
+  margin-bottom: 0.6rem;
+}
+
+.upload-box input,
+.upload-box select {
+  width: 100%;
+  margin: 0.25rem 0 0.45rem;
+}
+
+.upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.upload-info {
+  margin: 0.45rem 0 0;
+  color: #2f5568;
+  font-size: 0.85rem;
 .hint {
   margin-top: 0;
   color: #2f5568;
