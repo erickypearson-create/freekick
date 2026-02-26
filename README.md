@@ -29,3 +29,13 @@ Depois acesse `http://localhost:4173`.
 - Placar no topo atualiza a disputa após cada cobrança.
 
 - Placas atrás do gol com identidade visual inspirada no logo da Wizard (desenho vetorial em canvas).
+
+## Física e animações aplicadas
+
+- Jogador com corrida até a bola (run-up) e movimento corporal (inclinação, pernas e braços).
+- Bola com trajetória mais fluida usando curva de Bézier + efeito lateral + queda gravitacional no final.
+- Goleiro com movimento leve antes da cobrança (balanço lateral tradicional).
+- Defesa com reação física:
+  - salto para esquerda/direita com alcance em altura **baixa**, **média** e **alta**;
+  - salto vertical para bolas altas no centro;
+  - agachada para bolas rasteiras no centro.
