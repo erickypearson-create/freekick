@@ -1,18 +1,31 @@
 # freekick
 
-Jogo simples de cobrança de pênaltis em 2D com perguntas em inglês (placeholders).
+Jogo de cobrança de pênaltis em 2D com estilo visual de transmissão (estádio, placar e câmera atrás do cobrador), usando perguntas em inglês como placeholders.
 
-## Como rodar
+## Como abrir no navegador
 
-Como é um projeto estático, basta abrir `index.html` no navegador.
+### Opção 1 (rápida)
+Abra o arquivo `index.html` diretamente no navegador.
 
-## Mecânicas implementadas
+### Opção 2 (recomendada)
+Execute um servidor local:
 
-- Desenho do gol, campo, jogador, goleiro e bola em canvas 2D.
-- Fluxo de decisão por etapas: direção, altura, força e efeito.
-- Cada etapa usa uma pergunta placeholder em inglês.
-- Acertos simulados aumentam bônus de precisão do chute.
-- Efeitos especiais:
-  - **3 dedos** (curva lateral);
-  - **Cavadinha** (trajetória mais alta e lenta);
-  - **Dancinha** (run-up para tentar enganar o goleiro).
+```bash
+cd /workspace/freekick
+python3 -m http.server 4173 --directory /workspace/freekick
+```
+
+Depois acesse `http://localhost:4173`.
+
+## Mecânicas
+
+- Escolhas do chute por 4 etapas: **direção**, **altura**, **força** e **efeito**.
+- Cada etapa depende de uma pergunta em inglês (placeholder para você substituir depois).
+- Acertos aumentam bônus de precisão e reduzem erro aleatório no chute.
+- Efeitos especiais implementados:
+  - **3 dedos** (curva);
+  - **cavadinha** (trajetória mais alta e suave);
+  - **dancinha** (run-up para tentar deslocar o goleiro).
+- Placar no topo atualiza a disputa após cada cobrança.
+
+- Placas atrás do gol com identidade visual inspirada no logo da Wizard (desenho vetorial em canvas).
