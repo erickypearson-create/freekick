@@ -352,6 +352,10 @@ function renderScore() {
 
 function showStep() {
   const step = steps[state.index];
+  if (!step) {
+    resetRound();
+    return;
+  }
   ui.phase.textContent = step.label;
   ui.question.textContent = step.question;
   ui.result.textContent = "Responda para aumentar precisão.";
@@ -367,6 +371,13 @@ function showStep() {
 
 function answerStep(choice) {
   if (state.phase === "runup" || state.phase === "flight") return;
+
+  const step = steps[state.index];
+  if (!step) return;
+
+  Array.from(ui.answers.querySelectorAll("button")).forEach((btn) => {
+    btn.disabled = true;
+  });
 
   ui.result.textContent = "Responda para aumentar a precisão da batida.";
   ui.answers.innerHTML = "";
