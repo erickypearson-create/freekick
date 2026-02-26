@@ -1,5 +1,8 @@
 # freekick
 
+Jogo de pênaltis 2D em estilo cartoon, com regras de gameplay mantidas.
+
+## Como rodar rápido
 Jogo de cobrança de pênaltis em 2D com estilo visual de transmissão (estádio, placar e câmera atrás do cobrador), usando perguntas em inglês como placeholders.
 
 ## Como abrir no navegador
@@ -15,6 +18,29 @@ cd /workspace/freekick
 python3 -m http.server 4173 --directory /workspace/freekick
 ```
 
+Abra `http://localhost:4173`.
+
+## Regras mantidas
+
+- Fluxo com 4 decisões: direção, altura, força e efeito.
+- Cada decisão depende de pergunta em inglês (placeholder).
+- Acertos aumentam a precisão do chute.
+- Efeitos mantidos: 3 dedos, cavadinha e dancinha.
+- Física mantida: corrida, trajetória curva da bola e reação do goleiro.
+
+## Visual
+
+- Cena cartoon reconstruída do zero (campo em perspectiva, gol com profundidade, rede, goleiro e cobrador orgânicos).
+- Placas atrás do gol com branding Wizard by Pearson alinhadas.
+- Background estático é gerado uma única vez e reutilizado a cada frame.
+
+
+## Ajustes visuais recentes
+
+- Removidos elementos de placar/contagem no rodapé (bolinhas, labels e blocos de bandeira).
+- Bola redesenhada com padrão clássico de futebol (base branca + gomos escuros) e sombra elíptica.
+- Goleiro trocado para sprite dedicado em `assets/keeper-wizkid.svg`.
+- Background permanece único e pré-renderizado uma única vez via `buildStaticBackground()`.
 Depois acesse `http://localhost:4173`.
 
 ## Mecânicas
