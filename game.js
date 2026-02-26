@@ -55,6 +55,12 @@ const keeper = {
   currentPose: { handX: canvas.width / 2, handY: 195, reachX: 54, reachY: 44 },
 };
 
+const player = { x: canvas.width / 2 - 120, y: canvas.height - 38 };
+const penaltySpot = { x: canvas.width / 2, y: canvas.height - 150 };
+const ball = { x: penaltySpot.x, y: penaltySpot.y, radius: 9 };
+const keeper = { x: canvas.width / 2, y: 206, w: 62, h: 76, armSpan: 108 };
+const score = { left: 13, right: 12 };
+
 const steps = [
   {
     key: "direction",
@@ -89,6 +95,9 @@ const state = {
   phase: "idle", // idle, runup, flight, done
   shot: null,
   time: 0,
+  shot: null,
+  running: false,
+  ballProgress: 0,
 };
 
 function resetRound() {
@@ -112,10 +121,16 @@ function resetRound() {
   keeper.diveHeight = "mid";
   keeper.diveProgress = 0;
 
+  state.running = false;
+  state.ballProgress = 0;
+  ball.x = penaltySpot.x;
+  ball.y = penaltySpot.y;
+  keeper.x = canvas.width / 2;
   ui.summary.innerHTML = "";
   ui.nextBtn.classList.add("hidden");
   renderScore();
   showStep();
+  drawScene();
 }
 
 function renderScore() {
@@ -145,6 +160,7 @@ function randomCorrectness() {
 function answerStep(choice) {
   if (state.phase === "runup" || state.phase === "flight") return;
 
+  if (state.running) return;
   const step = steps[state.index];
   const correct = randomCorrectness();
   state.answers[step.key] = { choice, correct };
@@ -167,6 +183,11 @@ function answerStep(choice) {
 }
 
 function prepareShot() {
+  calculateShot();
+  animateShot();
+}
+
+function calculateShot() {
   const direction = state.answers.direction.choice;
   const height = state.answers.height.choice;
   const power = state.answers.power.choice;
@@ -181,6 +202,14 @@ function prepareShot() {
   if (height === "Top corner") targetY = 132;
 
   let speed = 0.016;
+  if (direction.includes("Left")) targetX = canvas.width / 2 - 220;
+  if (direction.includes("Right")) targetX = canvas.width / 2 + 220;
+
+  let targetY = 188;
+  if (height === "Low") targetY = 245;
+  if (height === "Top corner") targetY = 133;
+
+  let speed = 0.017;
   if (power === "Balanced") speed = 0.021;
   if (power === "Powerful") speed = 0.026;
 
@@ -209,6 +238,23 @@ function prepareShot() {
     curve,
     shotZone,
   };
+  if (spin.includes("3 dedos")) curve = direction.includes("Left") ? 62 : -62;
+
+  if (spin.includes("cavadinha")) {
+    targetY -= 36;
+    speed = 0.018;
+  }
+
+  if (spin.includes("dancinha")) {
+    speed += 0.003;
+    keeper.x += Math.random() > 0.5 ? -70 : 70;
+  }
+
+  const precision = Math.min(0.4, state.precisionBonus);
+  targetX += (Math.random() - 0.5) * 170 * (1 - precision);
+  targetY += (Math.random() - 0.5) * 120 * (1 - precision);
+
+  state.shot = { targetX, targetY, speed, curve, precision, spin };
 
   ui.summary.innerHTML = `
     <p><strong>Direção:</strong> ${direction}</p>
@@ -335,6 +381,40 @@ function finalizeShot() {
   const insideGoal = ball.x > canvas.width / 2 - 275 && ball.x < canvas.width / 2 + 275 && ball.y > 118 && ball.y < 273;
   const save = isKeeperSave(ball.x, ball.y);
   const goal = insideGoal && !save;
+function animateShot() {
+  state.running = true;
+  ui.phase.textContent = "Shot";
+  ui.question.textContent = "Finalizando cobrança...";
+  ui.answers.innerHTML = "";
+
+  const startX = penaltySpot.x;
+  const startY = penaltySpot.y;
+
+  function frame() {
+    state.ballProgress += state.shot.speed;
+    const t = Math.min(state.ballProgress, 1);
+
+    ball.x = lerp(startX, state.shot.targetX, t) + Math.sin(t * Math.PI) * state.shot.curve;
+    ball.y = lerp(startY, state.shot.targetY, t);
+    keeper.x = lerp(keeper.x, state.shot.targetX, 0.03);
+
+    drawScene();
+
+    if (t < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      state.running = false;
+      finalizeShot();
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function finalizeShot() {
+  const insideGoal = ball.x > canvas.width / 2 - 275 && ball.x < canvas.width / 2 + 275 && ball.y > 118 && ball.y < 273;
+  const keeperReach = Math.abs(ball.x - keeper.x) < 55 && Math.abs(ball.y - keeper.y) < 58;
+  const goal = insideGoal && !keeperReach;
 
   if (goal) score.right += 1;
   else score.left += 1;
@@ -344,6 +424,8 @@ function finalizeShot() {
   ui.result.textContent = goal
     ? "⚽ GOOOL! Bola com trajetória mais fluida e chute preciso."
     : "🧤 Defesa do goleiro! Ele reagiu com salto/alcance físico.";
+    ? "⚽ GOOOL! A cobrança ficou mais precisa com os acertos em inglês."
+    : "🧤 Defendido (ou fora)! Melhore as respostas para ganhar precisão.";
 
   ui.nextBtn.classList.remove("hidden");
 }
@@ -437,6 +519,7 @@ function drawAdBoards() {
 function drawWizardLogo(cx, cy, scale = 1) {
   const s = scale;
 
+  // red mark (stylized circle/eagle)
   ctx.fillStyle = "#ef2037";
   ctx.beginPath();
   ctx.ellipse(cx - 92 * s, cy - 1 * s, 25 * s, 16 * s, -0.08, 0, Math.PI * 2);
@@ -447,12 +530,15 @@ function drawWizardLogo(cx, cy, scale = 1) {
   ctx.ellipse(cx - 88 * s, cy - 1 * s, 12 * s, 6 * s, -0.15, 0.2, Math.PI * 1.9);
   ctx.fill();
 
+  // text WIZARD
   ctx.fillStyle = "#003866";
   ctx.font = `900 ${Math.round(22 * s)}px Arial`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("WIZARD", cx + 8 * s, cy - 3 * s);
 
+  // subtitle by Pearson
+  ctx.fillStyle = "#003866";
   ctx.font = `700 ${Math.round(12 * s)}px Arial`;
   ctx.fillText("by Pearson", cx + 6 * s, cy + 12 * s);
 }
@@ -473,6 +559,7 @@ function drawGoalAndNet() {
   ctx.lineWidth = 5;
   ctx.strokeRect(goalX, goalY, goalW, goalH);
 
+  // posts thickness shadow
   ctx.strokeStyle = "rgba(0,0,0,0.22)";
   ctx.lineWidth = 3;
   ctx.strokeRect(goalX + 3, goalY + 3, goalW - 6, goalH - 6);
@@ -574,6 +661,21 @@ function drawPlayer() {
   ctx.fillStyle = "#111827";
   ctx.beginPath();
   ctx.arc(0, -88, 13, 0, Math.PI * 2);
+
+  ctx.fillStyle = "#dcf028";
+  ctx.fillRect(x - 19, y - 74, 38, 48);
+  ctx.fillStyle = "#1b2af4";
+  ctx.fillRect(x - 19, y - 26, 38, 42);
+  ctx.fillRect(x - 18, y + 16, 13, 34);
+  ctx.fillRect(x + 5, y + 16, 13, 34);
+
+  ctx.fillStyle = "#ffcc9a";
+  ctx.fillRect(x - 26, y - 58, 8, 24);
+  ctx.fillRect(x + 18, y - 58, 8, 24);
+
+  ctx.fillStyle = "#111827";
+  ctx.beginPath();
+  ctx.arc(x, y - 88, 13, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#f8fbff";
@@ -625,12 +727,23 @@ function drawKeeper() {
 
   ctx.fillStyle = "#cf1f1f";
   ctx.fillRect(-keeper.width / 2, -keeper.height / 2, keeper.width, keeper.height);
+  ctx.fillText("7", x - 3, y - 1);
+}
+
+function drawKeeper() {
+  const x = keeper.x;
+  const y = keeper.y;
+
+  ctx.fillStyle = "#cf1f1f";
+  ctx.fillRect(x - keeper.w / 2, y - keeper.h / 2, keeper.w, keeper.h);
 
   ctx.strokeStyle = "#ffd6d6";
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.moveTo(-armSpread / 2, -15 + armLift);
   ctx.lineTo(armSpread / 2, -15 + armLift);
+  ctx.moveTo(x - keeper.armSpan / 2, y - 15);
+  ctx.lineTo(x + keeper.armSpan / 2, y - 15);
   ctx.stroke();
 
   ctx.fillStyle = "#ffcd8f";
@@ -650,6 +763,12 @@ function drawKeeper() {
     reachX: armSpread / 2,
     reachY: keeper.diveType === "centerLow" ? 30 : keeper.diveType === "centerHigh" ? 34 : 40,
   };
+  ctx.arc(x, y - 50, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#cf1f1f";
+  ctx.fillRect(x - 20, y + 36, 14, 42);
+  ctx.fillRect(x + 6, y + 36, 14, 42);
 }
 
 function drawBallShadow() {
@@ -710,3 +829,4 @@ ui.nextBtn.addEventListener("click", resetRound);
 renderScore();
 resetRound();
 requestAnimationFrame(gameLoop);
+drawScene();
