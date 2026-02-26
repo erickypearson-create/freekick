@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penalty English Challenge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="layout">
+    <section class="game-panel">
+      <h1>Penalty English Challenge</h1>
+      <canvas id="pitch" width="900" height="520" aria-label="Campo de pênalti em 2D"></canvas>
+      <div id="hud" class="hud">
+        <p><strong>Fase:</strong> <span id="phase">Direction</span></p>
+        <p><strong>Pergunta:</strong> <span id="question">Pressione iniciar para responder perguntas em inglês.</span></p>
+        <p><strong>Resultado:</strong> <span id="result">-</span></p>
+      </div>
+    </section>
+
+    <aside class="controls">
+      <h2>Escolhas do Chute</h2>
+      <p class="instructions">Cada escolha depende de uma pergunta em inglês. Acertar aumenta a precisão.</p>
+      <button id="startBtn">Iniciar cobrança</button>
+      <div id="answers" class="answers"></div>
+      <div id="summary" class="summary"></div>
+      <button id="nextBtn" class="hidden">Cobrar novamente</button>
+    </aside>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

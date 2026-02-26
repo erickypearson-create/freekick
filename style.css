@@ -1,0 +1,84 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #102314;
+  color: #eef6ed;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.game-panel,
+.controls {
+  background: #1a3220;
+  border: 1px solid #4c7858;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+canvas {
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  border-radius: 10px;
+  border: 2px solid #dcefd6;
+  background: linear-gradient(#2f8c4f, #1f6a3a);
+}
+
+.hud {
+  margin-top: 0.75rem;
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.controls h2 {
+  margin-top: 0;
+}
+
+.instructions {
+  color: #c6e4ca;
+}
+
+button {
+  appearance: none;
+  border: 1px solid #95cea1;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: #2a5b35;
+  color: #f2fff5;
+  margin: 0.25rem 0.25rem 0.25rem 0;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #327040;
+}
+
+.answers {
+  margin-top: 0.75rem;
+}
+
+.summary {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: #d7f3dd;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
