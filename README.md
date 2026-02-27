@@ -79,6 +79,20 @@ Se o parsing não conseguir mapear corretamente, o jogo avisa e recomenda usar o
 
 
 - Upload/parsing roda sem dependências externas de CDN para evitar falhas de carregamento em ambientes bloqueados.
+
+## Deploy no GitHub Pages (correção do item 1)
+
+Este repositório agora inclui workflow automático em `.github/workflows/deploy-pages.yml`.
+
+### Como ativar
+
+1. No GitHub, abra **Settings → Pages**.
+2. Em **Build and deployment**, selecione **Source: GitHub Actions**.
+3. Garanta que o branch de desenvolvimento seja `main`.
+4. Faça push de um commit no `main`.
+
+Após o workflow `Deploy GitHub Pages` finalizar com sucesso, a URL publicada deve refletir a versão mais recente do jogo.
+
 Se o parsing não conseguir mapear corretamente, o jogo avisa e recomenda usar o template XLSX.
 ## Regras mantidas
 
