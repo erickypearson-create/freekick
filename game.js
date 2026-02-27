@@ -379,6 +379,22 @@ function parseTextQuestionBlocks(rawText) {
 }
 
 async function parseExcelFile(file) {
+  // Fallback sem dependências externas: CSV/TSV (compatível com Excel ao salvar como CSV).
+  const text = await file.text();
+  const lines = text.replace(/\r/g, "").split("\n").filter(Boolean);
+  if (!lines.length) return [];
+
+  const sep = lines[0].includes("	") ? "	" : ",";
+  const headers = lines[0].split(sep).map((h) => h.trim());
+  const rows = lines.slice(1).map((line) => {
+    const cols = line.split(sep);
+    const row = {};
+    headers.forEach((h, i) => {
+      row[h] = (cols[i] || "").trim();
+    });
+    return row;
+  });
+
   if (!window.XLSX) throw new Error("Biblioteca XLSX não carregada");
   const arrayBuffer = await file.arrayBuffer();
   const workbook = window.XLSX.read(arrayBuffer, { type: "array" });
@@ -388,6 +404,14 @@ async function parseExcelFile(file) {
 }
 
 async function parseDocxFile(file) {
+  // Fallback simples: tenta ler texto bruto e aplicar parser por blocos.
+  const text = await file.text();
+  return parseTextQuestionBlocks(text);
+}
+
+async function parsePdfFile(file) {
+  // Fallback simples: tenta ler texto bruto e aplicar parser por blocos.
+  const text = await file.text();
   if (!window.mammoth) throw new Error("Biblioteca DOCX não carregada");
   const arrayBuffer = await file.arrayBuffer();
   const { value } = await window.mammoth.extractRawText({ arrayBuffer });
@@ -426,6 +450,7 @@ async function loadQuestionsFromFile() {
 
   let questions = [];
   try {
+    if (file.name.toLowerCase().endsWith(".xlsx") || file.name.toLowerCase().endsWith(".csv")) {
     if (file.name.toLowerCase().endsWith(".xlsx")) {
       questions = await parseExcelFile(file);
     } else if (file.name.toLowerCase().endsWith(".docx")) {
@@ -437,11 +462,13 @@ async function loadQuestionsFromFile() {
       return;
     }
   } catch (error) {
+    ui.uploadInfo.textContent = `Falha no parsing: ${error.message}. Use o template recomendado.`;
     ui.uploadInfo.textContent = `Falha no parsing: ${error.message}. Use o template XLSX recomendado.`;
     return;
   }
 
   if (!questions.length) {
+    ui.uploadInfo.textContent = "Não consegui mapear perguntas válidas. Revise o formato ou use o template CSV recomendado.";
     ui.uploadInfo.textContent = "Não consegui mapear perguntas válidas. Revise o formato ou use o template XLSX.";
     return;
   }
@@ -451,6 +478,10 @@ async function loadQuestionsFromFile() {
   initializeQuestionBank(payload);
 
   ui.uploadInfo.textContent = `Banco carregado com ${questions.length} perguntas. Modo: ${mode}.`;
+  ui.result.textContent = "Banco de perguntas atualizado com sucesso.";
+}
+
+function downloadTemplate() {
 }
 
 function downloadTemplate() {

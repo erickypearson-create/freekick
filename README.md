@@ -57,6 +57,7 @@ Primeira aba com colunas:
 - `correctAnswer` (`A|B|C|D`)
 - `commandValue`
 
+Use o botão **Baixar template** para gerar um arquivo CSV de exemplo (abre no Excel/Planilhas).
 Use o botão **Baixar template** para gerar um arquivo de exemplo.
 
 ### Padrão de parsing para DOCX/PDF
@@ -74,6 +75,10 @@ correctAnswer: A
 commandValue: left
 ```
 
+Se o parsing não conseguir mapear corretamente, o jogo avisa e recomenda usar o template CSV.
+
+
+- Upload/parsing roda sem dependências externas de CDN para evitar falhas de carregamento em ambientes bloqueados.
 Se o parsing não conseguir mapear corretamente, o jogo avisa e recomenda usar o template XLSX.
 ## Regras mantidas
 
