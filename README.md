@@ -39,6 +39,10 @@ Resultado final:
 - Todas dimensões erradas: **FORA**
 - Misto (parte certa, parte errada): **TRAVE**
 
+## Upload de perguntas (PDF / DOCX / XLSX / CSV)
+
+Na lateral direita da tela:
+1. Selecione um arquivo (`.pdf`, `.docx`, `.xlsx` ou `.csv`).
 ## Upload de perguntas (PDF / DOCX / XLSX)
 
 Na lateral direita da tela:
@@ -88,6 +92,10 @@ Este repositório agora inclui workflow automático em `.github/workflows/deploy
 
 1. No GitHub, abra **Settings → Pages**.
 2. Em **Build and deployment**, selecione **Source: GitHub Actions**.
+3. Faça push de um commit em qualquer branch (o workflow está configurado para publicar sempre a versão mais recente enviada).
+
+Após o workflow `Deploy GitHub Pages` finalizar com sucesso, a URL publicada deve refletir a versão mais recente do jogo.
+
 3. Garanta que o branch de desenvolvimento seja `main`.
 4. Faça push de um commit no `main`.
 
