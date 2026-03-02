@@ -40,6 +40,10 @@ O repositório inclui workflow em `.github/workflows/deploy-pages.yml`.
 1. Em **Settings → Pages**, escolha **Source: GitHub Actions**.
 2. Faça push no branch `main`.
 3. Aguarde o workflow **Deploy GitHub Pages** finalizar.
+
+1. Em **Settings → Pages**, escolha **Source: GitHub Actions**.
+2. Faça push no branch `main`.
+3. Aguarde o workflow **Deploy GitHub Pages** finalizar.
 ## Regras
 
 - O chute depende de 3 dimensões: `direction`, `height` e `power`.
