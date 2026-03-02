@@ -17,6 +17,7 @@ const ui = {
 };
 
 const STORAGE_KEY = "freekick-question-bank-v5";
+const STORAGE_KEY = "freekick-question-bank-v4";
 const DIMENSIONS = ["direction", "height", "power"];
 const OPTIONS = {
   direction: ["left", "center", "right"],
@@ -85,6 +86,49 @@ const state = {
   roundQuestions: [],
   roundAnswers: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
+  ball: {
+    x: BALL_START.x,
+    y: BALL_START.y,
+    t: 0,
+    speed: 0.022,
+    startX: BALL_START.x,
+    startY: BALL_START.y,
+    controlX: BALL_START.x,
+    controlY: 340,
+    targetX: canvas.width / 2,
+    targetY: 255,
+  },
+
+const defaults = [
+  {
+    dimension: "direction",
+    prompt: "Which side should the striker target?",
+    choices: ["Left", "Center", "Right"],
+    correctAnswer: "A",
+    commandValue: "left",
+  },
+  {
+    dimension: "height",
+    prompt: "What is the target height?",
+    choices: ["Low", "Mid", "High"],
+    correctAnswer: "A",
+    commandValue: "low",
+  },
+  {
+    dimension: "power",
+    prompt: "How strong should the shot be?",
+    choices: ["Weak", "Medium", "Strong"],
+    correctAnswer: "C",
+    commandValue: "strong",
+  },
+];
+
+const state = {
+  phase: "idle",
+  index: 0,
+  roundQuestions: [],
+  roundAnswers: {},
+  bank: { mode: "ordered", questions: defaults.slice(), pointer: 0 },
   ball: {
     x: BALL_START.x,
     y: BALL_START.y,
@@ -309,6 +353,129 @@ function animateShot() {
       return;
     }
 
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.questions) || !parsed.questions.length) return;
+
+    state.bank = {
+      mode: parsed.mode === "random" ? "random" : "ordered",
+      questions: parsed.questions.filter(isValid),
+      pointer: 0,
+    };
+  } catch {
+    state.bank = { mode: "ordered", questions: defaults.slice(), pointer: 0 };
+  }
+}
+
+function nextQuestion(dimension) {
+  const source = state.bank.mode === "random" ? shuffle(state.bank.questions) : state.bank.questions;
+  for (let i = 0; i < source.length; i += 1) {
+    const idx = (state.bank.pointer + i) % source.length;
+    if (source[idx].dimension === dimension) {
+      state.bank.pointer = idx + 1;
+      return source[idx];
+    }
+  }
+  return defaults.find((q) => q.dimension === dimension);
+}
+
+function startRound() {
+  state.phase = "quiz";
+  state.index = 0;
+  state.roundAnswers = {};
+  state.roundQuestions = DIMENSIONS.map((d) => nextQuestion(d));
+
+  ui.startBtn.classList.add("hidden");
+  ui.nextBtn.classList.add("hidden");
+  ui.summary.textContent = "";
+  ui.result.textContent = "Responda as perguntas.";
+
+  showCurrentQuestion();
+  draw();
+}
+
+function showCurrentQuestion() {
+  const item = state.roundQuestions[state.index];
+  if (!item) {
+    resolveShot();
+    return;
+  }
+
+  ui.phase.textContent = item.dimension;
+  ui.question.textContent = item.prompt;
+  ui.answers.innerHTML = "";
+
+  item.choices.forEach((choice, idx) => {
+    const key = String.fromCharCode(65 + idx);
+    const btn = document.createElement("button");
+    btn.textContent = `${key}) ${choice}`;
+    btn.addEventListener("click", () => answerQuestion(item, key));
+    ui.answers.appendChild(btn);
+  });
+}
+
+function answerQuestion(item, choiceKey) {
+  state.roundAnswers[item.dimension] = {
+    correct: choiceKey === item.correctAnswer,
+    commandValue: item.commandValue,
+  };
+  state.index += 1;
+  showCurrentQuestion();
+}
+
+function randomOther(dimension, expected) {
+  const arr = OPTIONS[dimension].filter((x) => x !== expected);
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function resolveShot() {
+  const commands = {};
+  let correct = 0;
+
+  DIMENSIONS.forEach((dim) => {
+    const ans = state.roundAnswers[dim];
+    if (ans.correct) {
+      commands[dim] = ans.commandValue;
+      correct += 1;
+    } else {
+      commands[dim] = randomOther(dim, ans.commandValue);
+    }
+  });
+
+  const outcome = correct === DIMENSIONS.length ? "GOL" : correct === 0 ? "FORA" : "TRAVE";
+  ui.result.textContent = outcome;
+  ui.answers.innerHTML = "";
+  ui.summary.textContent = `Comandos finais: direção=${commands.direction}, altura=${commands.height}, força=${commands.power}.`;
+
+  animateShot(commands);
+}
+
+function animateShot(commands) {
+  state.phase = "flight";
+  state.ball.t = 0;
+  state.ball.startX = BALL_START.x;
+  state.ball.startY = BALL_START.y;
+  state.ball.targetX = commands.direction === "left"
+    ? canvas.width / 2 - 90
+    : commands.direction === "right"
+      ? canvas.width / 2 + 90
+      : canvas.width / 2;
+
+  state.ball.targetY = commands.height === "low" ? 303 : commands.height === "high" ? 245 : 275;
+  state.ball.controlX = (state.ball.startX + state.ball.targetX) / 2;
+  state.ball.controlY = commands.height === "high" ? 190 : 230;
+  state.ball.speed = commands.power === "weak" ? 0.015 : commands.power === "strong" ? 0.032 : 0.022;
+
+  const step = () => {
+    state.ball.t += state.ball.speed;
+    if (state.ball.t >= 1) {
+      state.ball.t = 1;
+      state.phase = "done";
+      ui.nextBtn.classList.remove("hidden");
+      draw();
+      return;
+    }
+
     const t = state.ball.t;
     const inv = 1 - t;
     state.ball.x = (inv * inv * state.ball.startX)
@@ -356,12 +523,35 @@ function drawGoal() {
     ctx.beginPath();
     ctx.moveTo(GOAL.x + 4, y);
     ctx.lineTo(GOAL.x + GOAL.w - 4, y);
+  const gx = 36;
+  const gy = 164;
+  const gw = canvas.width - 72;
+  const gh = 130;
+
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "#ffffff";
+  ctx.strokeRect(gx, gy, gw, gh);
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,255,255,0.8)";
+  for (let x = gx + 8; x < gx + gw; x += 10) {
+    ctx.beginPath();
+    ctx.moveTo(x, gy + 6);
+    ctx.lineTo(x, gy + gh - 2);
+    ctx.stroke();
+  }
+  for (let y = gy + 8; y < gy + gh; y += 10) {
+    ctx.beginPath();
+    ctx.moveTo(gx + 4, y);
+    ctx.lineTo(gx + gw - 4, y);
     ctx.stroke();
   }
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(GOAL.x - 8, GOAL.y, 8, GOAL.h + 6);
   ctx.fillRect(GOAL.x + GOAL.w, GOAL.y, 8, GOAL.h + 6);
+  ctx.fillRect(gx - 8, gy, 8, gh + 6);
+  ctx.fillRect(gx + gw, gy, 8, gh + 6);
 }
 
 function drawKeeper() {
@@ -572,6 +762,119 @@ async function parseXlsx(file) {
   return mapRows(rows);
 }
 
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#464646";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2f2f2f";
+  ctx.beginPath();
+  ctx.moveTo(x, y - 9 * scale);
+  ctx.lineTo(x + 8 * scale, y - 2 * scale);
+  ctx.lineTo(x + 5 * scale, y + 8 * scale);
+  ctx.lineTo(x - 5 * scale, y + 8 * scale);
+  ctx.lineTo(x - 8 * scale, y - 2 * scale);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawScene() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, 160);
+  sky.addColorStop(0, "#6ab5ff");
+  sky.addColorStop(1, "#a4d4ff");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, canvas.width, 160);
+
+  ctx.fillStyle = "#d81f2a";
+  ctx.fillRect(30, 12, canvas.width - 60, 48);
+  ctx.strokeStyle = "#f4f4f4";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(30, 12, canvas.width - 60, 48);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 15px Arial";
+  ctx.fillText("Sprint 150 CBS", 46, 41);
+  ctx.font = "bold 21px Arial";
+  ctx.fillText("One HEART.", 214, 43);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 11px Arial";
+  ctx.fillText("HONDA", canvas.width - 82, 42);
+
+  drawCrowdBand(64, 96, "#32445e");
+
+  ctx.fillStyle = "#0e0f12";
+  ctx.fillRect(0, 160, canvas.width, 108);
+  drawGoal();
+  drawKeeper();
+  drawField();
+  drawArrow();
+}
+
+function draw() {
+  drawScene();
+
+  if (state.phase === "flight" || state.phase === "done") {
+    const scale = Math.max(0.35, 1 - (BALL_START.y - state.ball.y) / 360);
+    drawBall(state.ball.x, state.ball.y, scale);
+  } else {
+    drawBall(BALL_START.x, BALL_START.y, 1);
+  }
+}
+
+async function parseCsvOrTsv(file) {
+  const text = (await file.text()).replace(/\r/g, "");
+  const lines = text.split("\n").filter(Boolean);
+  if (!lines.length) return [];
+
+  const sep = lines[0].includes("\t") ? "\t" : ",";
+  const headers = lines[0].split(sep).map((h) => h.trim());
+  const rows = lines.slice(1).map((line) => {
+    const cols = line.split(sep);
+    const row = {};
+    headers.forEach((h, i) => {
+      row[h] = (cols[i] || "").trim();
+    });
+    return row;
+  });
+
+  return mapRows(rows);
+}
+
+function parseDimension(value) {
+  const v = String(value || "").trim().toLowerCase();
+  if (["direction", "direcao", "direção"].includes(v)) return "direction";
+  if (["height", "altura"].includes(v)) return "height";
+  if (["power", "forca", "força"].includes(v)) return "power";
+  return null;
+}
+
+function mapRows(rows) {
+  return rows
+    .map((r) => ({
+      dimension: parseDimension(r.dimension),
+      prompt: String(r.prompt || "").trim(),
+      choices: [r.choiceA, r.choiceB, r.choiceC, r.choiceD].filter(Boolean),
+      correctAnswer: String(r.correctAnswer || "").trim().toUpperCase(),
+      commandValue: String(r.commandValue || "").trim().toLowerCase(),
+    }))
+    .filter(isValid);
+}
+
+async function parseXlsx(file) {
+  if (!window.XLSX) throw new Error("XLSX indisponível");
+  const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = window.XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  return mapRows(rows);
+}
+
 async function parseDocx(file) {
   if (!window.mammoth) throw new Error("DOCX indisponível");
   const { value } = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
@@ -598,6 +901,7 @@ function parseBlocks(text) {
       const split = line.indexOf(":");
       if (split < 0) return;
       const key = line.slice(0, split).trim().toLowerCase();
+      const key = line.slice(0, split).trim();
       const value = line.slice(split + 1).trim();
       row[key] = value;
     });
@@ -648,6 +952,9 @@ function downloadTemplate() {
     "direction,Where does she live?,She live at school.,She lives at school.,She lives at her house.,She living at home.,C,left",
     "height,Choose the correct sentence.,He don't like apples.,He doesn't likes apples.,He doesn't like apples.,He not like apples.,C,high",
     "power,Choose the best synonym for happy.,sad,angry,glad,noisy,C,strong",
+    "direction,Which side should the striker target?,Left,Center,Right,Far right,A,left",
+    "height,What is the target height?,Low,Mid,High,Very high,A,low",
+    "power,How strong should the shot be?,Weak,Medium,Strong,Very strong,C,strong",
   ].join("\n");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
