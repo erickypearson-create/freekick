@@ -1,6 +1,7 @@
 # freekick
 
 Jogo de pênalti em 2D com quiz em inglês para definir direção, altura e força.
+Jogo de pênalti em 2D com quiz para definir direção, altura e força do chute.
 
 ## Rodar localmente
 
@@ -39,3 +40,27 @@ O repositório inclui workflow em `.github/workflows/deploy-pages.yml`.
 1. Em **Settings → Pages**, escolha **Source: GitHub Actions**.
 2. Faça push no branch `main`.
 3. Aguarde o workflow **Deploy GitHub Pages** finalizar.
+## Regras
+
+- O chute depende de 3 dimensões: `direction`, `height` e `power`.
+- Cada dimensão vem de uma pergunta com alternativas.
+- Se acertar, a dimensão usa o `commandValue` da pergunta.
+- Se errar, a dimensão é sorteada entre alternativas incorretas.
+- Resultado final:
+  - 3 acertos: **GOL**
+  - 0 acertos: **FORA**
+  - parcial: **TRAVE**
+
+## Upload de perguntas
+
+Suporte para `.csv`, `.xlsx`, `.docx` e `.pdf`.
+
+Campos esperados por pergunta:
+
+- `dimension`
+- `prompt`
+- `choiceA`, `choiceB`, `choiceC`, `choiceD`
+- `correctAnswer` (`A`, `B`, `C` ou `D`)
+- `commandValue`
+
+Use o botão **Baixar template** para gerar um CSV de exemplo.
