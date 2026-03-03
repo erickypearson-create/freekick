@@ -25,6 +25,18 @@ Abra `http://localhost:4173`.
 
 Colunas esperadas:
 
+
+- Cada cobrança tem 3 decisões: `direction`, `height` e `power`.
+- Cada decisão sempre vem de uma pergunta em inglês.
+- Sem upload, o jogo gera perguntas aleatórias (gramática/vocabulário).
+- Com upload, usa o banco enviado (`csv`, `xlsx`, `docx`, `pdf`).
+- Se acertar as 3 perguntas: **GOL** (bola no alvo).
+- Se errar qualquer uma: **FORA** (bola fora do gol).
+
+## Formato do banco de perguntas
+
+Colunas esperadas:
+
 - `dimension`
 - `prompt`
 - `choiceA`, `choiceB`, `choiceC`, `choiceD`
@@ -36,6 +48,10 @@ Use o botão **Baixar template** para gerar um CSV de exemplo.
 ## Deploy no GitHub Pages
 
 O repositório inclui workflow em `.github/workflows/deploy-pages.yml`.
+
+1. Em **Settings → Pages**, escolha **Source: GitHub Actions**.
+2. Faça push no branch `main`.
+3. Aguarde o workflow **Deploy GitHub Pages** finalizar.
 
 1. Em **Settings → Pages**, escolha **Source: GitHub Actions**.
 2. Faça push no branch `main`.
