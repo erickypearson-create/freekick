@@ -1,6 +1,9 @@
 (function () {
 "use strict";
 
+if (window.__freekickBooted) return;
+window.__freekickBooted = true;
+
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
 
