@@ -4,6 +4,9 @@
 }
 
 * { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -17,6 +20,7 @@ body {
   padding: 1.2rem;
   display: grid;
   grid-template-columns: minmax(320px, 460px) 1fr;
+  align-items: start;
   gap: 1rem;
 }
 
@@ -39,6 +43,10 @@ body {
 .hud,
 .upload-box,
 .round-box {
+  background: #406;
+}
+
+.hud {
   margin-top: 0.75rem;
   background: #0d1f34;
   border-radius: 8px;
@@ -53,6 +61,36 @@ h1 { margin: 0; font-size: 1.4rem; }
 .upload-box input,
 .upload-box select,
 button { width: 100%; margin-bottom: 0.55rem; }
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.hint {
+  margin-top: 0.3rem;
+  color: #c3def8;
+}
+
+.upload-box {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #0d1f34;
+}
+
+.upload-box h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
+}
+
+.upload-box input,
+.upload-box select,
+button {
+  width: 100%;
+  margin-bottom: 0.55rem;
+}
 
 .upload-actions {
   display: grid;
@@ -98,6 +136,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   margin: 0;
   text-align: left;
   font-weight: 600;
+button:hover {
+  filter: brightness(1.06);
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.45rem;
+}
+
+.answers button {
+  margin: 0;
+  text-align: left;
+  font-weight: 600;
+}
+
+.summary,
+.upload-info {
+  color: #c8def2;
+  font-size: 0.92rem;
 }
 
 .summary,
@@ -106,4 +164,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @media (max-width: 960px) {
   .layout { grid-template-columns: 1fr; }
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }

@@ -27,6 +27,8 @@ const LABELS = {
   height: "Altura",
   power: "Força",
 };
+const STORAGE_KEY = "freekick-question-bank-v5";
+const DIMENSIONS = ["direction", "height", "power"];
 const OPTIONS = {
   direction: ["left", "center", "right"],
   height: ["low", "mid", "high"],
@@ -57,6 +59,59 @@ const ENGLISH_POOL = {
     { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
     { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
     { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
+
+const BALL_START = { x: canvas.width / 2, y: canvas.height - 64 };
+const GOAL = {
+  x: 36,
+  y: 164,
+  w: canvas.width - 72,
+  h: 130,
+};
+
+const ENGLISH_POOL = {
+  grammar: [
+    {
+      prompt: "Choose the correct sentence:",
+      correct: "She lives in a small house.",
+      wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."],
+    },
+    {
+      prompt: "Choose the correct option:",
+      correct: "He doesn't like rainy days.",
+      wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."],
+    },
+    {
+      prompt: "Pick the grammatically correct sentence:",
+      correct: "Where does your brother work?",
+      wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"],
+    },
+    {
+      prompt: "Choose the correct question:",
+      correct: "Did they watch the movie yesterday?",
+      wrong: ["Do they watched the movie yesterday?", "Did they watched the movie yesterday?", "They did watch the movie yesterday?"],
+    },
+  ],
+  vocabulary: [
+    {
+      prompt: "Choose the correct meaning of 'quiet':",
+      correct: "making little noise",
+      wrong: ["full of energy", "very expensive", "extremely crowded"],
+    },
+    {
+      prompt: "Choose the best synonym for 'happy':",
+      correct: "glad",
+      wrong: ["angry", "tired", "lazy"],
+    },
+    {
+      prompt: "Choose the opposite of 'difficult':",
+      correct: "easy",
+      wrong: ["heavy", "noisy", "dangerous"],
+    },
+    {
+      prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'",
+      correct: "have",
+      wrong: ["am", "do", "make"],
+    },
   ],
 };
 
@@ -68,6 +123,7 @@ const state = {
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
   outcome: "-",
+  bank: { mode: "ordered", questions: [], pointer: 0 },
   ball: {
     x: BALL_START.x,
     y: BALL_START.y,
@@ -124,6 +180,19 @@ function buildRandomEnglishQuestion(dimension) {
     choices: options,
     correctAnswer: String.fromCharCode(65 + options.findIndex((o) => o === base.correct)),
     commandValue: randomChoice(OPTIONS[dimension]),
+  const source = Math.random() > 0.5 ? ENGLISH_POOL.grammar : ENGLISH_POOL.vocabulary;
+  const base = randomChoice(source);
+  const commandValue = randomChoice(OPTIONS[dimension]);
+
+  const options = shuffle([base.correct, ...base.wrong]).slice(0, 4);
+  const correctIndex = options.findIndex((opt) => opt === base.correct);
+
+  return {
+    dimension,
+    prompt: `${base.prompt} (${dimension.toUpperCase()})`,
+    choices: options,
+    correctAnswer: String.fromCharCode(65 + correctIndex),
+    commandValue,
   };
 }
 
@@ -133,6 +202,8 @@ function loadBank() {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.questions)) return;
+    if (!Array.isArray(parsed.questions) || !parsed.questions.length) return;
+
     state.bank = {
       mode: parsed.mode === "random" ? "random" : "ordered",
       questions: parsed.questions.filter(isValid),
@@ -146,6 +217,7 @@ function loadBank() {
 function nextUploadedQuestion(dimension) {
   const source = state.bank.mode === "random" ? shuffle(state.bank.questions) : state.bank.questions;
   if (!source.length) return null;
+
   for (let i = 0; i < source.length; i += 1) {
     const idx = (state.bank.pointer + i) % source.length;
     if (source[idx].dimension === dimension) {
@@ -158,6 +230,9 @@ function nextUploadedQuestion(dimension) {
 
 function questionForDimension(dimension) {
   return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension);
+  const uploaded = nextUploadedQuestion(dimension);
+  if (uploaded) return uploaded;
+  return buildRandomEnglishQuestion(dimension);
 }
 
 function startRound() {
@@ -175,6 +250,14 @@ function startRound() {
   ui.summary.textContent = state.bank.questions.length
     ? "Banco enviado carregado."
     : "Perguntas aleatórias em inglês.";
+  state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
+
+  ui.startBtn.classList.add("hidden");
+  ui.nextBtn.classList.add("hidden");
+  ui.summary.textContent = state.bank.questions.length
+    ? "Perguntas do arquivo carregado em uso."
+    : "Perguntas aleatórias em inglês geradas automaticamente.";
+  ui.result.textContent = "Responda as perguntas.";
 
   showCurrentQuestion();
   draw();
@@ -229,6 +312,22 @@ function answerQuestion(item, answerKey) {
   state.roundAnswers[item.dimension] = {
     correct: answerKey === item.correctAnswer,
     playerChoice,
+  ui.phase.textContent = item.dimension;
+  ui.question.textContent = item.prompt;
+  ui.answers.innerHTML = "";
+
+  item.choices.forEach((choice, idx) => {
+    const key = String.fromCharCode(65 + idx);
+    const button = document.createElement("button");
+    button.textContent = `${key}) ${choice}`;
+    button.addEventListener("click", () => answerQuestion(item, key));
+    ui.answers.appendChild(button);
+  });
+}
+
+function answerQuestion(item, answerKey) {
+  state.roundAnswers[item.dimension] = {
+    correct: answerKey === item.correctAnswer,
     commandValue: item.commandValue,
   };
   state.index += 1;
@@ -260,6 +359,17 @@ function targetFromCommands(commands) {
   let y = GOAL.y + 72;
   if (commands.height === "low") y = GOAL.y + GOAL.h - 8;
   if (commands.height === "high") y = GOAL.y + 20;
+function targetInsideGoal(commands) {
+  const direction = commands.direction;
+  const height = commands.height;
+
+  let x = canvas.width / 2;
+  if (direction === "left") x = GOAL.x + 64;
+  if (direction === "right") x = GOAL.x + GOAL.w - 64;
+
+  let y = GOAL.y + 72;
+  if (height === "low") y = GOAL.y + GOAL.h - 8;
+  if (height === "high") y = GOAL.y + 20;
 
   return { x, y };
 }
@@ -295,6 +405,49 @@ function resolveShot() {
   state.outcome = outcome;
 
   const target = applyOutcomeTargets(outcome, resolved, errors);
+function targetOutsideGoal(commands, answers) {
+  const inside = targetInsideGoal(commands);
+  let x = inside.x;
+  let y = inside.y;
+
+  const directionWrong = !answers.direction.correct;
+  const heightWrong = !answers.height.correct;
+  const powerWrong = !answers.power.correct;
+
+  if (directionWrong) {
+    if (commands.direction === "left") x = GOAL.x + GOAL.w + 45;
+    else if (commands.direction === "right") x = GOAL.x - 45;
+    else x = Math.random() > 0.5 ? GOAL.x - 45 : GOAL.x + GOAL.w + 45;
+  } else {
+    x += Math.random() > 0.5 ? 30 : -30;
+  }
+
+  if (heightWrong) {
+    y = Math.random() > 0.5 ? GOAL.y - 40 : GOAL.y + GOAL.h + 54;
+  }
+
+  if (powerWrong && !heightWrong) {
+    y = GOAL.y - 28;
+  }
+
+  return { x, y };
+}
+
+function resolveShot() {
+  const commands = {};
+  let correct = 0;
+
+  DIMENSIONS.forEach((dim) => {
+    const answer = state.roundAnswers[dim];
+    commands[dim] = answer.commandValue;
+    if (answer.correct) correct += 1;
+  });
+
+  const isGoal = correct === DIMENSIONS.length;
+  const target = isGoal
+    ? targetInsideGoal(commands)
+    : targetOutsideGoal(commands, state.roundAnswers);
+
   state.ball.startX = BALL_START.x;
   state.ball.startY = BALL_START.y;
   state.ball.targetX = target.x;
@@ -323,6 +476,11 @@ function resolveShot() {
   ui.summary.textContent = `Erros: ${errors}. Regra aplicada: 0=gol, 1=goleiro pega, 2=trave, 3=fora.`;
   ui.commandChoices.innerHTML = "";
   ui.answers.innerHTML = "";
+  state.ball.speed = commands.power === "weak" ? 0.016 : commands.power === "strong" ? 0.032 : 0.022;
+
+  ui.result.textContent = isGoal ? "GOL" : "FORA";
+  ui.answers.innerHTML = "";
+  ui.summary.textContent = `Acertos: ${correct}/3. ${isGoal ? "Acertou todas: bola no alvo." : "Errou ao menos uma: bola fora do gol."}`;
 
   animateShot();
 }
@@ -346,6 +504,13 @@ function animateShot() {
     state.ball.x = (inv * inv * state.ball.startX) + (2 * inv * t * state.ball.controlX) + (t * t * state.ball.targetX);
     state.ball.y = (inv * inv * state.ball.startY) + (2 * inv * t * state.ball.controlY) + (t * t * state.ball.targetY);
     state.keeper.x = state.keeper.startX + (state.keeper.targetX - state.keeper.startX) * Math.min(1, t * 1.25);
+    state.ball.x = (inv * inv * state.ball.startX)
+      + (2 * inv * t * state.ball.controlX)
+      + (t * t * state.ball.targetX);
+
+    state.ball.y = (inv * inv * state.ball.startY)
+      + (2 * inv * t * state.ball.controlY)
+      + (t * t * state.ball.targetY);
 
     draw();
     requestAnimationFrame(step);
@@ -370,6 +535,7 @@ function drawCrowdBand(y, h, baseColor) {
 function drawGoal() {
   ctx.lineWidth = 6;
   ctx.strokeStyle = "#fff";
+  ctx.strokeStyle = "#ffffff";
   ctx.strokeRect(GOAL.x, GOAL.y, GOAL.w, GOAL.h);
 
   ctx.lineWidth = 1;
@@ -390,6 +556,14 @@ function drawGoal() {
 
 function drawKeeper() {
   const cx = state.keeper.x;
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(GOAL.x - 8, GOAL.y, 8, GOAL.h + 6);
+  ctx.fillRect(GOAL.x + GOAL.w, GOAL.y, 8, GOAL.h + 6);
+}
+
+function drawKeeper() {
+  const cx = canvas.width / 2;
   const cy = 276;
 
   ctx.fillStyle = "#7c4124";
@@ -405,6 +579,13 @@ function drawKeeper() {
   ctx.fillStyle = "#ef8e53";
   ctx.fillRect(cx - 18, cy - 18, 36, 46);
 
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 18);
+  ctx.lineTo(cx, cy + 28);
+  ctx.stroke();
+
   ctx.strokeStyle = "#efcd54";
   ctx.lineWidth = 12;
   ctx.lineCap = "round";
@@ -413,6 +594,19 @@ function drawKeeper() {
   ctx.lineTo(cx - 55, cy + 4);
   ctx.moveTo(cx + 18, cy - 5);
   ctx.lineTo(cx + 55, cy + 4);
+  ctx.stroke();
+
+  ctx.fillStyle = "#ef8e53";
+  ctx.fillRect(cx - 17, cy + 28, 14, 32);
+  ctx.fillRect(cx + 3, cy + 28, 14, 32);
+
+  ctx.strokeStyle = "#d66b38";
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 10, cy + 58);
+  ctx.lineTo(cx - 24, cy + 68);
+  ctx.moveTo(cx + 10, cy + 58);
+  ctx.lineTo(cx + 24, cy + 68);
   ctx.stroke();
 }
 
@@ -452,6 +646,7 @@ function drawArrow() {
 
 function drawBall(x, y, scale = 1) {
   const r = 30 * scale;
+
   ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath();
   ctx.ellipse(x + 4, y + r + 9, r * 0.95, r * 0.35, 0, 0, Math.PI * 2);
@@ -466,6 +661,25 @@ function drawBall(x, y, scale = 1) {
   ctx.fillStyle = "#fff";
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#464646";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#2f2f2f";
+  ctx.beginPath();
+  ctx.moveTo(x, y - 9 * scale);
+  ctx.lineTo(x + 8 * scale, y - 2 * scale);
+  ctx.lineTo(x + 5 * scale, y + 8 * scale);
+  ctx.lineTo(x - 5 * scale, y + 8 * scale);
+  ctx.lineTo(x - 8 * scale, y - 2 * scale);
+  ctx.closePath();
   ctx.fill();
 }
 
@@ -483,6 +697,19 @@ function drawScene() {
   ctx.fillStyle = "#fff";
   ctx.font = "bold 21px Arial";
   ctx.fillText("One HEART.", 214, 43);
+
+  ctx.strokeStyle = "#f4f4f4";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(30, 12, canvas.width - 60, 48);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 15px Arial";
+  ctx.fillText("Sprint 150 CBS", 46, 41);
+  ctx.font = "bold 21px Arial";
+  ctx.fillText("One HEART.", 214, 43);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 11px Arial";
+  ctx.fillText("HONDA", canvas.width - 82, 42);
 
   drawCrowdBand(64, 96, "#32445e");
 
@@ -538,6 +765,15 @@ function mapRows(rows) {
     correctAnswer: String(r.correctAnswer || r.CorrectAnswer || "").trim().toUpperCase(),
     commandValue: String(r.commandValue || r.CommandValue || "").trim().toLowerCase(),
   })).filter(isValid);
+  return rows
+    .map((r) => ({
+      dimension: parseDimension(r.dimension || r.Dimension),
+      prompt: String(r.prompt || r.Prompt || "").trim(),
+      choices: [r.choiceA || r.ChoiceA, r.choiceB || r.ChoiceB, r.choiceC || r.ChoiceC, r.choiceD || r.ChoiceD].filter(Boolean),
+      correctAnswer: String(r.correctAnswer || r.CorrectAnswer || "").trim().toUpperCase(),
+      commandValue: String(r.commandValue || r.CommandValue || "").trim().toLowerCase(),
+    }))
+    .filter(isValid);
 }
 
 async function parseXlsx(file) {
@@ -545,6 +781,10 @@ async function parseXlsx(file) {
   const wb = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
   const sh = wb.Sheets[wb.SheetNames[0]];
   return mapRows(window.XLSX.utils.sheet_to_json(sh, { defval: "" }));
+  const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = window.XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  return mapRows(rows);
 }
 
 async function parseDocx(file) {
@@ -563,6 +803,13 @@ async function parsePdf(file) {
     chunks.push(content.items.map((it) => it.str).join(" "));
   }
   return parseBlocks(chunks.join("\n\n"));
+  const pagesText = [];
+  for (let p = 1; p <= pdf.numPages; p += 1) {
+    const page = await pdf.getPage(p);
+    const text = await page.getTextContent();
+    pagesText.push(text.items.map((item) => item.str).join(" "));
+  }
+  return parseBlocks(pagesText.join("\n\n"));
 }
 
 function parseBlocks(text) {
@@ -573,6 +820,14 @@ function parseBlocks(text) {
       const i = line.indexOf(":");
       if (i < 0) return;
       row[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
+  const rows = blocks.map((block) => {
+    const row = {};
+    block.split("\n").forEach((line) => {
+      const split = line.indexOf(":");
+      if (split < 0) return;
+      const key = line.slice(0, split).trim().toLowerCase();
+      const value = line.slice(split + 1).trim();
+      row[key] = value;
     });
     return row;
   });
@@ -606,6 +861,12 @@ async function loadQuestionsFromFile() {
   }
 
   state.bank = { mode: ui.modeSelect.value === "random" ? "random" : "ordered", questions, pointer: 0 };
+  state.bank = {
+    mode: ui.modeSelect.value === "random" ? "random" : "ordered",
+    questions,
+    pointer: 0,
+  };
+
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.bank));
   ui.uploadInfo.textContent = `Banco carregado com ${questions.length} perguntas.`;
 }
@@ -624,6 +885,10 @@ function downloadTemplate() {
   a.href = url;
   a.download = "freekick-questions-template.csv";
   a.click();
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "freekick-questions-template.csv";
+  link.click();
   URL.revokeObjectURL(url);
 }
 
