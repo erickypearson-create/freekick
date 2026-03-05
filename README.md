@@ -14,6 +14,25 @@ Abra `http://localhost:4173`.
 
 ## Regras do quiz
 
+Cada cobrança tem 3 fases: `direction`, `height` e `power`.
+
+Em cada fase:
+1. O jogador escolhe uma opção de comando (ex.: esquerda/meio/direita).
+2. Responde uma pergunta em inglês.
+3. Se acertar, o comando escolhido é obedecido.
+4. Se errar, o jogo usa uma opção aleatória diferente da escolhida.
+
+Resultado final por erros:
+- 0 erros: **GOL**
+- 1 erro: **GOLEIRO PEGA**
+- 2 erros: **TRAVE**
+- 3 erros: **FORA**
+
+Sem upload, o jogo gera perguntas aleatórias em inglês (gramática/vocabulário).
+Com upload, usa o banco enviado (`csv`, `xlsx`, `docx`, `pdf`).
+
+## Formato do banco de perguntas
+
 - Cada cobrança tem 3 decisões: `direction`, `height` e `power`.
 - Cada decisão sempre vem de uma pergunta em inglês.
 - Sem upload, o jogo gera perguntas aleatórias (gramática/vocabulário).

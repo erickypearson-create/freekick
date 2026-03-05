@@ -9,6 +9,7 @@ const ui = {
   question: document.getElementById("question"),
   result: document.getElementById("result"),
   answers: document.getElementById("answers"),
+  commandChoices: document.getElementById("commandChoices"),
   startBtn: document.getElementById("startBtn"),
   nextBtn: document.getElementById("nextBtn"),
   summary: document.getElementById("summary"),
@@ -19,6 +20,13 @@ const ui = {
   uploadInfo: document.getElementById("uploadInfo"),
 };
 
+const STORAGE_KEY = "freekick-question-bank-v6";
+const DIMENSIONS = ["direction", "height", "power"];
+const LABELS = {
+  direction: "Direção",
+  height: "Altura",
+  power: "Força",
+};
 const STORAGE_KEY = "freekick-question-bank-v5";
 const DIMENSIONS = ["direction", "height", "power"];
 const OPTIONS = {
@@ -26,6 +34,31 @@ const OPTIONS = {
   height: ["low", "mid", "high"],
   power: ["weak", "medium", "strong"],
 };
+const OPTION_LABELS = {
+  left: "Esquerda",
+  center: "Meio",
+  right: "Direita",
+  low: "Baixo",
+  mid: "Médio",
+  high: "Alto",
+  weak: "Fraco",
+  medium: "Médio",
+  strong: "Forte",
+};
+
+const BALL_START = { x: canvas.width / 2, y: canvas.height - 64 };
+const GOAL = { x: 36, y: 164, w: canvas.width - 72, h: 130 };
+
+const ENGLISH_POOL = {
+  grammar: [
+    { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
+    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
+    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
+  ],
+  vocabulary: [
+    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
+    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
+    { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
 
 const BALL_START = { x: canvas.width / 2, y: canvas.height - 64 };
 const GOAL = {
@@ -87,6 +120,9 @@ const state = {
   index: 0,
   roundQuestions: [],
   roundAnswers: {},
+  playerChoices: {},
+  bank: { mode: "ordered", questions: [], pointer: 0 },
+  outcome: "-",
   bank: { mode: "ordered", questions: [], pointer: 0 },
   ball: {
     x: BALL_START.x,
@@ -99,6 +135,11 @@ const state = {
     controlY: 340,
     targetX: canvas.width / 2,
     targetY: 255,
+  },
+  keeper: {
+    x: canvas.width / 2,
+    startX: canvas.width / 2,
+    targetX: canvas.width / 2,
   },
 };
 
@@ -115,6 +156,11 @@ function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function randomExcluding(arr, excluded) {
+  const pool = arr.filter((v) => v !== excluded);
+  return randomChoice(pool);
+}
+
 function isValid(q) {
   return q
     && DIMENSIONS.includes(q.dimension)
@@ -126,6 +172,14 @@ function isValid(q) {
 }
 
 function buildRandomEnglishQuestion(dimension) {
+  const base = randomChoice(Math.random() > 0.5 ? ENGLISH_POOL.grammar : ENGLISH_POOL.vocabulary);
+  const options = shuffle([base.correct, ...base.wrong]).slice(0, 4);
+  return {
+    dimension,
+    prompt: `${base.prompt}`,
+    choices: options,
+    correctAnswer: String.fromCharCode(65 + options.findIndex((o) => o === base.correct)),
+    commandValue: randomChoice(OPTIONS[dimension]),
   const source = Math.random() > 0.5 ? ENGLISH_POOL.grammar : ENGLISH_POOL.vocabulary;
   const base = randomChoice(source);
   const commandValue = randomChoice(OPTIONS[dimension]);
@@ -147,6 +201,7 @@ function loadBank() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.questions)) return;
     if (!Array.isArray(parsed.questions) || !parsed.questions.length) return;
 
     state.bank = {
@@ -174,6 +229,7 @@ function nextUploadedQuestion(dimension) {
 }
 
 function questionForDimension(dimension) {
+  return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension);
   const uploaded = nextUploadedQuestion(dimension);
   if (uploaded) return uploaded;
   return buildRandomEnglishQuestion(dimension);
@@ -183,6 +239,17 @@ function startRound() {
   state.phase = "quiz";
   state.index = 0;
   state.roundAnswers = {};
+  state.playerChoices = {};
+  state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
+  state.outcome = "-";
+  state.keeper.x = canvas.width / 2;
+
+  ui.startBtn.classList.add("hidden");
+  ui.nextBtn.classList.add("hidden");
+  ui.result.textContent = "Escolha a opção da fase e responda a pergunta.";
+  ui.summary.textContent = state.bank.questions.length
+    ? "Banco enviado carregado."
+    : "Perguntas aleatórias em inglês.";
   state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
 
   ui.startBtn.classList.add("hidden");
@@ -196,6 +263,37 @@ function startRound() {
   draw();
 }
 
+function renderPhaseChoices(item) {
+  ui.commandChoices.innerHTML = "";
+  OPTIONS[item.dimension].forEach((value) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `phase-choice ${state.playerChoices[item.dimension] === value ? "active" : ""}`;
+    btn.textContent = OPTION_LABELS[value];
+    btn.addEventListener("click", () => {
+      state.playerChoices[item.dimension] = value;
+      renderPhaseChoices(item);
+      renderAnswerButtons(item);
+    });
+    ui.commandChoices.appendChild(btn);
+  });
+}
+
+function renderAnswerButtons(item) {
+  ui.answers.innerHTML = "";
+  const hasChoice = Boolean(state.playerChoices[item.dimension]);
+
+  item.choices.forEach((choice, idx) => {
+    const key = String.fromCharCode(65 + idx);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = `${key}) ${choice}`;
+    btn.disabled = !hasChoice;
+    btn.addEventListener("click", () => answerQuestion(item, key));
+    ui.answers.appendChild(btn);
+  });
+}
+
 function showCurrentQuestion() {
   const item = state.roundQuestions[state.index];
   if (!item) {
@@ -203,6 +301,17 @@ function showCurrentQuestion() {
     return;
   }
 
+  ui.phase.textContent = `${LABELS[item.dimension]} (${item.dimension})`;
+  ui.question.textContent = item.prompt;
+  renderPhaseChoices(item);
+  renderAnswerButtons(item);
+}
+
+function answerQuestion(item, answerKey) {
+  const playerChoice = state.playerChoices[item.dimension];
+  state.roundAnswers[item.dimension] = {
+    correct: answerKey === item.correctAnswer,
+    playerChoice,
   ui.phase.textContent = item.dimension;
   ui.question.textContent = item.prompt;
   ui.answers.innerHTML = "";
@@ -225,6 +334,31 @@ function answerQuestion(item, answerKey) {
   showCurrentQuestion();
 }
 
+function resolveCommandsAndErrors() {
+  const resolved = {};
+  let errors = 0;
+
+  DIMENSIONS.forEach((dim) => {
+    const ans = state.roundAnswers[dim];
+    if (ans.correct) {
+      resolved[dim] = ans.playerChoice;
+    } else {
+      errors += 1;
+      resolved[dim] = randomExcluding(OPTIONS[dim], ans.playerChoice);
+    }
+  });
+
+  return { resolved, errors };
+}
+
+function targetFromCommands(commands) {
+  let x = canvas.width / 2;
+  if (commands.direction === "left") x = GOAL.x + 64;
+  if (commands.direction === "right") x = GOAL.x + GOAL.w - 64;
+
+  let y = GOAL.y + 72;
+  if (commands.height === "low") y = GOAL.y + GOAL.h - 8;
+  if (commands.height === "high") y = GOAL.y + 20;
 function targetInsideGoal(commands) {
   const direction = commands.direction;
   const height = commands.height;
@@ -240,6 +374,37 @@ function targetInsideGoal(commands) {
   return { x, y };
 }
 
+function applyOutcomeTargets(outcome, commands, errors) {
+  const inside = targetFromCommands(commands);
+
+  if (outcome === "goal" || outcome === "save") {
+    return inside;
+  }
+  if (outcome === "post") {
+    return {
+      x: commands.direction === "left" ? GOAL.x + 5 : GOAL.x + GOAL.w - 5,
+      y: inside.y,
+    };
+  }
+
+  // miss (3 erros): fora do gol
+  return {
+    x: errors % 2 ? GOAL.x - 46 : GOAL.x + GOAL.w + 46,
+    y: commands.height === "high" ? GOAL.y - 36 : GOAL.y + GOAL.h + 56,
+  };
+}
+
+function resolveShot() {
+  const { resolved, errors } = resolveCommandsAndErrors();
+
+  let outcome = "goal";
+  if (errors === 3) outcome = "miss";
+  else if (errors === 2) outcome = "post";
+  else if (errors === 1) outcome = "save";
+
+  state.outcome = outcome;
+
+  const target = applyOutcomeTargets(outcome, resolved, errors);
 function targetOutsideGoal(commands, answers) {
   const inside = targetInsideGoal(commands);
   let x = inside.x;
@@ -289,6 +454,28 @@ function resolveShot() {
   state.ball.targetY = target.y;
   state.ball.controlX = (state.ball.startX + state.ball.targetX) / 2;
   state.ball.controlY = Math.min(state.ball.startY - 150, target.y - 45);
+  state.ball.speed = resolved.power === "weak" ? 0.016 : resolved.power === "strong" ? 0.032 : 0.022;
+
+  state.keeper.startX = state.keeper.x;
+  if (outcome === "save") {
+    state.keeper.targetX = target.x;
+  } else if (Math.random() > 0.5) {
+    state.keeper.targetX = target.x;
+  } else {
+    state.keeper.targetX = randomChoice([canvas.width / 2 - 90, canvas.width / 2, canvas.width / 2 + 90]);
+  }
+
+  const messages = {
+    goal: "GOL",
+    save: "GOLEIRO PEGOU",
+    post: "TRAVE",
+    miss: "FORA",
+  };
+
+  ui.result.textContent = messages[outcome];
+  ui.summary.textContent = `Erros: ${errors}. Regra aplicada: 0=gol, 1=goleiro pega, 2=trave, 3=fora.`;
+  ui.commandChoices.innerHTML = "";
+  ui.answers.innerHTML = "";
   state.ball.speed = commands.power === "weak" ? 0.016 : commands.power === "strong" ? 0.032 : 0.022;
 
   ui.result.textContent = isGoal ? "GOL" : "FORA";
@@ -314,6 +501,9 @@ function animateShot() {
 
     const t = state.ball.t;
     const inv = 1 - t;
+    state.ball.x = (inv * inv * state.ball.startX) + (2 * inv * t * state.ball.controlX) + (t * t * state.ball.targetX);
+    state.ball.y = (inv * inv * state.ball.startY) + (2 * inv * t * state.ball.controlY) + (t * t * state.ball.targetY);
+    state.keeper.x = state.keeper.startX + (state.keeper.targetX - state.keeper.startX) * Math.min(1, t * 1.25);
     state.ball.x = (inv * inv * state.ball.startX)
       + (2 * inv * t * state.ball.controlX)
       + (t * t * state.ball.targetX);
@@ -344,6 +534,7 @@ function drawCrowdBand(y, h, baseColor) {
 
 function drawGoal() {
   ctx.lineWidth = 6;
+  ctx.strokeStyle = "#fff";
   ctx.strokeStyle = "#ffffff";
   ctx.strokeRect(GOAL.x, GOAL.y, GOAL.w, GOAL.h);
 
@@ -361,6 +552,10 @@ function drawGoal() {
     ctx.lineTo(GOAL.x + GOAL.w - 4, y);
     ctx.stroke();
   }
+}
+
+function drawKeeper() {
+  const cx = state.keeper.x;
 
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(GOAL.x - 8, GOAL.y, 8, GOAL.h + 6);
@@ -463,6 +658,9 @@ function drawBall(x, y, scale = 1) {
   ctx.arc(x, y, r + 5, 0, Math.PI * 2);
   ctx.stroke();
 
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -496,6 +694,10 @@ function drawScene() {
 
   ctx.fillStyle = "#d81f2a";
   ctx.fillRect(30, 12, canvas.width - 60, 48);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 21px Arial";
+  ctx.fillText("One HEART.", 214, 43);
+
   ctx.strokeStyle = "#f4f4f4";
   ctx.lineWidth = 2;
   ctx.strokeRect(30, 12, canvas.width - 60, 48);
@@ -556,6 +758,13 @@ function parseDimension(value) {
 }
 
 function mapRows(rows) {
+  return rows.map((r) => ({
+    dimension: parseDimension(r.dimension || r.Dimension),
+    prompt: String(r.prompt || r.Prompt || "").trim(),
+    choices: [r.choiceA || r.ChoiceA, r.choiceB || r.ChoiceB, r.choiceC || r.ChoiceC, r.choiceD || r.ChoiceD].filter(Boolean),
+    correctAnswer: String(r.correctAnswer || r.CorrectAnswer || "").trim().toUpperCase(),
+    commandValue: String(r.commandValue || r.CommandValue || "").trim().toLowerCase(),
+  })).filter(isValid);
   return rows
     .map((r) => ({
       dimension: parseDimension(r.dimension || r.Dimension),
@@ -569,6 +778,9 @@ function mapRows(rows) {
 
 async function parseXlsx(file) {
   if (!window.XLSX) throw new Error("XLSX indisponível");
+  const wb = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+  const sh = wb.Sheets[wb.SheetNames[0]];
+  return mapRows(window.XLSX.utils.sheet_to_json(sh, { defval: "" }));
   const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = window.XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
@@ -584,6 +796,13 @@ async function parseDocx(file) {
 async function parsePdf(file) {
   if (!window.pdfjsLib) throw new Error("PDF indisponível");
   const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const chunks = [];
+  for (let p = 1; p <= pdf.numPages; p += 1) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    chunks.push(content.items.map((it) => it.str).join(" "));
+  }
+  return parseBlocks(chunks.join("\n\n"));
   const pagesText = [];
   for (let p = 1; p <= pdf.numPages; p += 1) {
     const page = await pdf.getPage(p);
@@ -595,6 +814,12 @@ async function parsePdf(file) {
 
 function parseBlocks(text) {
   const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+  const rows = blocks.map((b) => {
+    const row = {};
+    b.split("\n").forEach((line) => {
+      const i = line.indexOf(":");
+      if (i < 0) return;
+      row[line.slice(0, i).trim().toLowerCase()] = line.slice(i + 1).trim();
   const rows = blocks.map((block) => {
     const row = {};
     block.split("\n").forEach((line) => {
@@ -635,6 +860,7 @@ async function loadQuestionsFromFile() {
     return;
   }
 
+  state.bank = { mode: ui.modeSelect.value === "random" ? "random" : "ordered", questions, pointer: 0 };
   state.bank = {
     mode: ui.modeSelect.value === "random" ? "random" : "ordered",
     questions,
@@ -655,6 +881,10 @@ function downloadTemplate() {
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "freekick-questions-template.csv";
+  a.click();
   const link = document.createElement("a");
   link.href = url;
   link.download = "freekick-questions-template.csv";
