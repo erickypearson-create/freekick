@@ -5,6 +5,23 @@
 if (window.__freekickBootstrapLoaded) return;
 window.__freekickBootstrapLoaded = true;
 
+async function cleanupLegacyClientCache() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      const targetKeys = keys.filter((k) => k.toLowerCase().includes("freekick") || k.toLowerCase().includes("github"));
+      await Promise.all(targetKeys.map((k) => caches.delete(k)));
+    }
+  } catch (_) {
+    // best effort cleanup
+  }
+}
+
 function loadCoreOnce() {
   if (window.__freekickCoreLoading || window.__freekickCoreLoaded) return;
   window.__freekickCoreLoading = true;
@@ -25,6 +42,7 @@ function loadCoreOnce() {
 }
 
 loadCoreOnce();
+cleanupLegacyClientCache();
 if (window.__freekickBooted) return;
 window.__freekickBooted = true;
 
