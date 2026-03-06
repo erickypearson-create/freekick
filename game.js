@@ -7,20 +7,12 @@ window.__freekickBooted = true;
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
 
-const ui = {
-  phase: document.getElementById("phase"),
-  question: document.getElementById("question"),
-  result: document.getElementById("result"),
-  answers: document.getElementById("answers"),
-  startBtn: document.getElementById("startBtn"),
-  nextBtn: document.getElementById("nextBtn"),
-  summary: document.getElementById("summary"),
-  fileInput: document.getElementById("questionFile"),
-  modeSelect: document.getElementById("questionMode"),
-  loadQuestionsBtn: document.getElementById("loadQuestionsBtn"),
-  downloadTemplateBtn: document.getElementById("downloadTemplateBtn"),
-  uploadInfo: document.getElementById("uploadInfo"),
-};
+// Arquivo legado de compatibilidade.
+// Mantido propositalmente sem declarações globais de runtime do jogo
+// para evitar conflitos caso uma versão antiga do HTML ainda tente
+// carregar game.js junto com app.js.
+if (window.__freekickLegacyLoaded) return;
+window.__freekickLegacyLoaded = true;
 
 const STORAGE_KEY = "freekick-question-bank-v5";
 const STORAGE_KEY = "freekick-question-bank-v4";

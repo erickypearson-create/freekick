@@ -43,6 +43,27 @@ body {
 .hud,
 .upload-box,
 .round-box {
+  margin-top: 0.75rem;
+  background: #0d1f34;
+  border-radius: 8px;
+  padding: 0.65rem;
+  line-height: 1.35;
+}
+
+h1 { margin: 0; font-size: 1.4rem; }
+.hint { margin-top: 0.3rem; color: #c3def8; }
+}
+
+#pitch {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 2px solid #7a97b8;
+}
+
+.hud,
+.upload-box,
+.round-box {
 }
 
 .hud,
@@ -99,8 +120,25 @@ h1 {
   font-size: 1rem;
 }
 
+.upload-box h2 { margin: 0 0 0.55rem; font-size: 1rem; }
 .upload-box input,
 .upload-box select,
+button { width: 100%; margin-bottom: 0.55rem; }
+
+.upload-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #53ae3f, #2b7a28);
+  color: #fff;
+  padding: 0.65rem;
+  cursor: pointer;
+  font-weight: 700;
 button {
   width: 100%;
   margin-bottom: 0.55rem;
@@ -148,7 +186,35 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   outline: 2px solid #ffe47a;
   background: linear-gradient(180deg, #4292ef, #2b66b2);
 }
+button:hover { filter: brightness(1.06); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.command-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.phase-choice {
+  background: linear-gradient(180deg, #3270b8, #214d83);
+}
+
+.phase-choice.active {
+  outline: 2px solid #ffe47a;
+  background: linear-gradient(180deg, #4292ef, #2b66b2);
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.45rem;
+}
+
+.answers button {
+  margin: 0;
+  text-align: left;
+  font-weight: 600;
 .answers {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
