@@ -32,6 +32,9 @@ jobs:
           rm -rf _site
           mkdir -p _site/assets
           cp index.html style.css app.js boot.js core.js game.js README.md _site/
+          cp -R assets/* _site/assets/
+          echo "commit=${GITHUB_SHA}" > _site/version.txt
+          echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> _site/version.txt
           cp index.html style.css app.js core.js game.js README.md _site/
           cp index.html style.css app.js game.js README.md _site/
           cp -R assets/* _site/assets/
