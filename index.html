@@ -41,6 +41,25 @@
       <button id="startBtn" type="button">Iniciar cobrança</button>
 
       <section class="round-box">
+        <div class="round-grid">
+          <div class="phase-panel">
+            <p><strong>Fase:</strong> <span id="phase">direction</span></p>
+            <p id="phaseHint" class="panel-hint">Escolha a opção da fase.</p>
+            <div id="commandChoices" class="command-choices"></div>
+          </div>
+
+          <div class="question-panel">
+            <p id="questionHint" class="panel-hint">Para confirmar sua escolha, responda a pergunta.</p>
+            <p><strong>Pergunta:</strong> <span id="question">Clique em iniciar para começar.</span></p>
+            <div id="answers" class="answers"></div>
+            <button id="phaseActionBtn" type="button" class="hidden">Avançar</button>
+          </div>
+        </div>
+        <p><strong>Resultado:</strong> <span id="result">-</span></p>
+      </section>
+
+
+      <section class="round-box">
         <p><strong>Fase:</strong> <span id="phase">direction</span></p>
         <div id="commandChoices" class="command-choices"></div>
         <p><strong>Pergunta:</strong> <span id="question">Clique em iniciar para começar.</span></p>

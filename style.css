@@ -59,6 +59,8 @@ body {
 
 }
 
+}
+
 #pitch {
   width: 100%;
   height: auto;
@@ -85,6 +87,11 @@ h1 { margin: 0; font-size: 1.4rem; }
   height: auto;
   border-radius: 12px;
   border: 2px solid #7a97b8;
+}
+
+.hud,
+.upload-box,
+.round-box {
 }
 
 .hud,
@@ -201,6 +208,16 @@ button {
   cursor: pointer;
   font-weight: 700;
 }
+
+button {
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #53ae3f, #2b7a28);
+  color: #fff;
+  padding: 0.65rem;
+  cursor: pointer;
+  font-weight: 700;
+}
 button:hover { filter: brightness(1.06); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -219,7 +236,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   outline: 2px solid #ffe47a;
   background: linear-gradient(180deg, #4292ef, #2b66b2);
 }
+button:hover { filter: brightness(1.06); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.command-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.phase-choice {
+  background: linear-gradient(180deg, #3270b8, #214d83);
 .phase-choice {
   background: linear-gradient(180deg, #3270b8, #214d83);
 }
@@ -231,6 +259,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 button:hover { filter: brightness(1.06); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.phase-choice.active {
+  outline: 2px solid #ffe47a;
+  background: linear-gradient(180deg, #4292ef, #2b66b2);
 button {
   border: 0;
   border-radius: 8px;
@@ -248,6 +279,51 @@ button {
 button:hover { filter: brightness(1.06); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.answers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.45rem;
+}
+
+.answers button {
+  margin: 0;
+  text-align: left;
+  font-weight: 600;
+  border: 2px solid transparent;
+}
+
+.answers button.active {
+  border-color: #ffe47a;
+  background: linear-gradient(180deg, #2f8fd9, #2368a0);
+}
+
+.summary,
+.upload-info { color: #c8def2; font-size: 0.92rem; }
+.hidden { display: none; }
+
+.round-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+.phase-panel,
+.question-panel {
+  background: #132947;
+  border: 1px solid #2f4f74;
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.panel-hint {
+  margin: 0.2rem 0 0.55rem;
+  color: #c8def2;
+  font-size: 0.94rem;
+}
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .round-grid { grid-template-columns: 1fr; }
 .command-choices {
   display: grid;
   grid-template-columns: repeat(3, minmax(110px, 1fr));

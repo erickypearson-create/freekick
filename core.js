@@ -15,6 +15,9 @@ const ui = {
   commandChoices: document.getElementById("commandChoices"),
   startBtn: document.getElementById("startBtn"),
   nextBtn: document.getElementById("nextBtn"),
+  phaseHint: document.getElementById("phaseHint"),
+  questionHint: document.getElementById("questionHint"),
+  phaseActionBtn: document.getElementById("phaseActionBtn"),
   summary: document.getElementById("summary"),
   fileInput: document.getElementById("questionFile"),
   modeSelect: document.getElementById("questionMode"),
@@ -29,6 +32,21 @@ const LABELS = {
   direction: "Direção",
   height: "Altura",
   power: "Força",
+};
+const DISPLAY_DIMENSIONS = {
+  direction: "direction",
+  height: "height",
+  power: "strength",
+};
+const PHASE_HINTS = {
+  direction: "Escolha a direção que você quer chutar a bola.",
+  height: "Escolha a altura para o seu chute.",
+  power: "Escolha a força para o seu chute.",
+};
+const QUESTION_HINTS = {
+  direction: "Para que sua direção seja confirmada, responda a pergunta.",
+  height: "Para que seu chute vá na altura certa, responda a pergunta.",
+  power: "Para que o chute saia na força desejada, responda a pergunta.",
 };
 const OPTIONS = {
   direction: ["left", "center", "right"],
@@ -68,6 +86,7 @@ const state = {
   index: 0,
   roundQuestions: [],
   roundAnswers: {},
+  selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
   outcome: "-",
@@ -167,6 +186,7 @@ function startRound() {
   state.phase = "quiz";
   state.index = 0;
   state.roundAnswers = {};
+  state.selectedAnswers = {};
   state.playerChoices = {};
   state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
   state.outcome = "-";
@@ -175,6 +195,7 @@ function startRound() {
   ui.startBtn.classList.add("hidden");
   ui.nextBtn.classList.add("hidden");
   ui.result.textContent = "Escolha a opção da fase e responda a pergunta.";
+  ui.phaseActionBtn.classList.add("hidden");
   ui.summary.textContent = state.bank.questions.length
     ? "Banco enviado carregado."
     : "Perguntas aleatórias em inglês.";
@@ -194,6 +215,7 @@ function renderPhaseChoices(item) {
       state.playerChoices[item.dimension] = value;
       renderPhaseChoices(item);
       renderAnswerButtons(item);
+      renderPhaseAction(item);
     });
     ui.commandChoices.appendChild(btn);
   });
@@ -202,6 +224,7 @@ function renderPhaseChoices(item) {
 function renderAnswerButtons(item) {
   ui.answers.innerHTML = "";
   const hasChoice = Boolean(state.playerChoices[item.dimension]);
+  const selectedAnswer = state.selectedAnswers[item.dimension];
 
   item.choices.forEach((choice, idx) => {
     const key = String.fromCharCode(65 + idx);
@@ -209,11 +232,35 @@ function renderAnswerButtons(item) {
     btn.type = "button";
     btn.textContent = `${key}) ${choice}`;
     btn.disabled = !hasChoice;
+    btn.className = selectedAnswer === key ? "active" : "";
+    btn.addEventListener("click", () => {
+      state.selectedAnswers[item.dimension] = key;
+      renderAnswerButtons(item);
+      renderPhaseAction(item);
+    });
     btn.addEventListener("click", () => answerQuestion(item, key));
     ui.answers.appendChild(btn);
   });
 }
 
+function renderPhaseAction(item) {
+  const selectedChoice = state.playerChoices[item.dimension];
+  const selectedAnswer = state.selectedAnswers[item.dimension];
+  const isLast = state.index === DIMENSIONS.length - 1;
+
+  ui.phaseActionBtn.classList.remove("hidden");
+  ui.phaseActionBtn.textContent = isLast ? "Bater pênalti" : "Avançar";
+  ui.phaseActionBtn.disabled = !selectedChoice || !selectedAnswer;
+  ui.phaseActionBtn.onclick = () => {
+    if (!selectedChoice || !selectedAnswer) return;
+    answerQuestion(item, selectedAnswer);
+  };
+}
+
+function showCurrentQuestion() {
+  const item = state.roundQuestions[state.index];
+  if (!item) {
+    ui.phaseActionBtn.classList.add("hidden");
 function showCurrentQuestion() {
   const item = state.roundQuestions[state.index];
   if (!item) {
@@ -221,6 +268,14 @@ function showCurrentQuestion() {
     return;
   }
 
+  const dimLabel = DISPLAY_DIMENSIONS[item.dimension] || item.dimension;
+  ui.phase.textContent = `${LABELS[item.dimension]} (${dimLabel})`;
+  ui.phaseHint.textContent = PHASE_HINTS[item.dimension];
+  ui.questionHint.textContent = QUESTION_HINTS[item.dimension];
+  ui.question.textContent = item.prompt;
+  renderPhaseChoices(item);
+  renderAnswerButtons(item);
+  renderPhaseAction(item);
   ui.phase.textContent = `${LABELS[item.dimension]} (${item.dimension})`;
   ui.question.textContent = item.prompt;
   renderPhaseChoices(item);
@@ -326,6 +381,7 @@ function resolveShot() {
   ui.summary.textContent = `Erros: ${errors}. Regra aplicada: 0=gol, 1=goleiro pega, 2=trave, 3=fora.`;
   ui.commandChoices.innerHTML = "";
   ui.answers.innerHTML = "";
+  ui.phaseActionBtn.classList.add("hidden");
 
   animateShot();
 }
