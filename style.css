@@ -8,10 +8,32 @@
   box-sizing: border-box;
 }
 
+* { box-sizing: border-box; }
+
 body {
   margin: 0;
   background: radial-gradient(circle at top, #17283d 0%, #0c1625 72%);
   color: #ecf6ff;
+}
+
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.2rem;
+  display: grid;
+  grid-template-columns: minmax(320px, 460px) 1fr;
+  gap: 1rem;
+}
+
+.game-panel,
+.controls {
+  background: #12253d;
+  border: 1px solid #355275;
+  border-radius: 14px;
+  padding: 0.9rem;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
 }
 
 .layout {
@@ -83,6 +105,11 @@ h1 { margin: 0; font-size: 1.4rem; }
 .hud,
 .upload-box,
 .round-box {
+}
+
+.hud,
+.upload-box,
+.round-box {
   background: #406;
 }
 
@@ -105,6 +132,7 @@ button { width: 100%; margin-bottom: 0.55rem; }
 
 h1 { margin: 0; font-size: 1.4rem; }
 .hint { margin-top: 0.3rem; color: #c3def8; }
+
 
 .upload-box h2 { margin: 0 0 0.55rem; font-size: 1rem; }
 .upload-box input,
@@ -293,6 +321,9 @@ button:hover {
 .summary,
 .upload-info { color: #c8def2; font-size: 0.92rem; }
 .hidden { display: none; }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
 
 @media (max-width: 960px) {
   .layout { grid-template-columns: 1fr; }
