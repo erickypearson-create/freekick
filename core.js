@@ -238,6 +238,7 @@ function renderAnswerButtons(item) {
       renderAnswerButtons(item);
       renderPhaseAction(item);
     });
+    btn.addEventListener("click", () => answerQuestion(item, key));
     ui.answers.appendChild(btn);
   });
 }
@@ -260,6 +261,9 @@ function showCurrentQuestion() {
   const item = state.roundQuestions[state.index];
   if (!item) {
     ui.phaseActionBtn.classList.add("hidden");
+function showCurrentQuestion() {
+  const item = state.roundQuestions[state.index];
+  if (!item) {
     resolveShot();
     return;
   }
@@ -272,6 +276,10 @@ function showCurrentQuestion() {
   renderPhaseChoices(item);
   renderAnswerButtons(item);
   renderPhaseAction(item);
+  ui.phase.textContent = `${LABELS[item.dimension]} (${item.dimension})`;
+  ui.question.textContent = item.prompt;
+  renderPhaseChoices(item);
+  renderAnswerButtons(item);
 }
 
 function answerQuestion(item, answerKey) {
