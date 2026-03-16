@@ -33,6 +33,20 @@ jobs:
           mkdir -p _site/assets
           cp index.html style.css app.js boot.js core.js game.js README.md _site/
           cp -R assets/* _site/assets/
+          python3 - <<'PY2'
+          from pathlib import Path
+          import re
+
+          p = Path('_site/index.html')
+          html = p.read_text()
+          html = re.sub(r'\n\s*<script src="(?:app|game)\.js[^"]*"></script>', '', html)
+          html = re.sub(r'\n\s*<script src="boot\.js\?v=(?!20260309b)[^"]*"></script>', '', html)
+          if 'boot.js?v=20260309b' not in html:
+            html = html.replace('</body>', '  <script src="boot.js?v=20260309b"></script>\n</body>')
+          p.write_text(html)
+          PY2
+          echo "commit=${GITHUB_SHA}" > _site/version.txt
+          echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> _site/version.txt
           echo "commit=${GITHUB_SHA}" > _site/version.txt
           echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> _site/version.txt
           cp index.html style.css app.js core.js game.js README.md _site/
