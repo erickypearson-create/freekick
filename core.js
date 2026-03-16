@@ -65,8 +65,16 @@ const OPTION_LABELS = {
   strong: "Forte",
 };
 
-const BALL_START = { x: canvas.width / 2, y: canvas.height - 64 };
-const GOAL = { x: 36, y: 164, w: canvas.width - 72, h: 130 };
+const BALL_START = { x: canvas.width / 2, y: canvas.height - 74 };
+const GOAL = { x: 64, y: 122, w: canvas.width - 128, h: 114 };
+const KEEPER_BASE_Y = GOAL.y + GOAL.h - 8;
+const PENALTY_AREA = {
+  top: GOAL.y + GOAL.h + 34,
+  sideInsetTop: 40,
+  sideInsetBottom: 10,
+  bottom: canvas.height - 26,
+};
+const KICKER_ANIMATION_MS = 460;
 
 const ENGLISH_POOL = {
   grammar: [
@@ -106,6 +114,14 @@ const state = {
     x: canvas.width / 2,
     startX: canvas.width / 2,
     targetX: canvas.width / 2,
+  },
+  kicker: {
+    x: BALL_START.x,
+    y: BALL_START.y + 62,
+    runStartY: BALL_START.y + 62,
+    runEndY: BALL_START.y + 20,
+    runProgress: 0,
+    legSwing: 0,
   },
 };
 
@@ -191,6 +207,11 @@ function startRound() {
   state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
   state.outcome = "-";
   state.keeper.x = canvas.width / 2;
+  state.kicker.y = state.kicker.runStartY;
+  state.kicker.runProgress = 0;
+  state.kicker.legSwing = 0;
+  state.ball.x = BALL_START.x;
+  state.ball.y = BALL_START.y;
 
   ui.startBtn.classList.add("hidden");
   ui.nextBtn.classList.add("hidden");
@@ -375,12 +396,40 @@ function resolveShot() {
   ui.answers.innerHTML = "";
   ui.phaseActionBtn.classList.add("hidden");
 
-  animateShot();
+  animateShotSequence();
+}
+
+function animateShotSequence() {
+  state.phase = "runup";
+  state.ball.x = BALL_START.x;
+  state.ball.y = BALL_START.y;
+  state.ball.t = 0;
+
+  const start = performance.now();
+  const runStep = (now) => {
+    const elapsed = now - start;
+    const progress = Math.min(1, elapsed / KICKER_ANIMATION_MS);
+    state.kicker.runProgress = progress;
+    state.kicker.y = state.kicker.runStartY + (state.kicker.runEndY - state.kicker.runStartY) * progress;
+    state.kicker.legSwing = Math.sin(progress * Math.PI * 5) * (1 - progress * 0.4);
+
+    draw();
+
+    if (progress >= 1) {
+      animateShot();
+      return;
+    }
+
+    requestAnimationFrame(runStep);
+  };
+
+  requestAnimationFrame(runStep);
 }
 
 function animateShot() {
   state.phase = "flight";
   state.ball.t = 0;
+  state.kicker.legSwing = 0;
 
   const step = () => {
     state.ball.t += state.ball.speed;
@@ -419,9 +468,18 @@ function drawCrowdBand(y, h, baseColor) {
 }
 
 function drawGoal() {
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 5;
   ctx.strokeStyle = "#fff";
   ctx.strokeRect(GOAL.x, GOAL.y, GOAL.w, GOAL.h);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.58)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(GOAL.x - 18, GOAL.y + 6);
+  ctx.lineTo(GOAL.x, GOAL.y + GOAL.h - 2);
+  ctx.moveTo(GOAL.x + GOAL.w + 18, GOAL.y + 6);
+  ctx.lineTo(GOAL.x + GOAL.w, GOAL.y + GOAL.h - 2);
+  ctx.stroke();
 
   ctx.lineWidth = 1;
   ctx.strokeStyle = "rgba(255,255,255,0.82)";
@@ -441,64 +499,106 @@ function drawGoal() {
 
 function drawKeeper() {
   const cx = state.keeper.x;
-  const cy = 276;
+  const cy = KEEPER_BASE_Y;
+  const dive = Math.max(-26, Math.min(26, (state.keeper.x - canvas.width / 2) * 0.14));
 
-  ctx.fillStyle = "#7c4124";
+  ctx.fillStyle = "#1f2730";
   ctx.beginPath();
-  ctx.arc(cx, cy - 43, 24, Math.PI, Math.PI * 2);
+  ctx.arc(cx, cy - 40, 20, Math.PI, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#ffd5ae";
   ctx.beginPath();
-  ctx.arc(cx, cy - 38, 18, 0, Math.PI * 2);
+  ctx.arc(cx, cy - 35, 14, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = "#ef8e53";
-  ctx.fillRect(cx - 18, cy - 18, 36, 46);
+  ctx.fillStyle = "#27313f";
+  ctx.fillRect(cx - 16, cy - 14, 32, 44);
 
-  ctx.strokeStyle = "#efcd54";
-  ctx.lineWidth = 12;
+  ctx.strokeStyle = "#b0d8ff";
+  ctx.lineWidth = 10;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(cx - 18, cy - 5);
-  ctx.lineTo(cx - 55, cy + 4);
-  ctx.moveTo(cx + 18, cy - 5);
-  ctx.lineTo(cx + 55, cy + 4);
+  ctx.moveTo(cx - 15, cy - 2);
+  ctx.lineTo(cx - 43 + dive, cy + 8);
+  ctx.moveTo(cx + 15, cy - 2);
+  ctx.lineTo(cx + 43 + dive, cy + 8);
+  ctx.moveTo(cx - 9, cy + 30);
+  ctx.lineTo(cx - 12 + dive * 0.2, cy + 49);
+  ctx.moveTo(cx + 9, cy + 30);
+  ctx.lineTo(cx + 12 + dive * 0.2, cy + 49);
   ctx.stroke();
 }
 
 function drawField() {
-  const startY = 268;
-  const stripe = 26;
+  const fieldTop = GOAL.y + GOAL.h + 6;
+  const stripe = 34;
   for (let i = 0; i < 12; i += 1) {
-    ctx.fillStyle = i % 2 ? "#5f8e14" : "#6fa01a";
-    ctx.fillRect(0, startY + i * stripe, canvas.width, stripe);
+    ctx.fillStyle = i % 2 ? "#5eb01e" : "#71c429";
+    ctx.fillRect(0, fieldTop + i * stripe, canvas.width, stripe);
   }
 
-  ctx.strokeStyle = "rgba(255,255,255,0.7)";
+  ctx.strokeStyle = "rgba(255,255,255,0.84)";
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(0, 291);
-  ctx.lineTo(canvas.width, 291);
-  ctx.moveTo(0, 334);
-  ctx.lineTo(canvas.width, 334);
+  ctx.moveTo(PENALTY_AREA.sideInsetTop, PENALTY_AREA.top);
+  ctx.lineTo(canvas.width - PENALTY_AREA.sideInsetTop, PENALTY_AREA.top);
+  ctx.moveTo(PENALTY_AREA.sideInsetTop, PENALTY_AREA.top);
+  ctx.lineTo(PENALTY_AREA.sideInsetBottom, PENALTY_AREA.bottom);
+  ctx.moveTo(canvas.width - PENALTY_AREA.sideInsetTop, PENALTY_AREA.top);
+  ctx.lineTo(canvas.width - PENALTY_AREA.sideInsetBottom, PENALTY_AREA.bottom);
+  ctx.moveTo(PENALTY_AREA.sideInsetBottom, PENALTY_AREA.bottom);
+  ctx.lineTo(canvas.width - PENALTY_AREA.sideInsetBottom, PENALTY_AREA.bottom);
+  ctx.stroke();
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,0.4)";
+  ctx.beginPath();
+  for (let y = fieldTop + 26; y < canvas.height - 8; y += 36) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+  }
   ctx.stroke();
 }
 
-function drawArrow() {
+function drawKickMarker() {
   const cx = canvas.width / 2;
-  const y = canvas.height - 152;
-  ctx.fillStyle = "#ff552e";
+  const y = BALL_START.y + 44;
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
   ctx.beginPath();
-  ctx.moveTo(cx, y - 56);
-  ctx.lineTo(cx - 30, y - 24);
-  ctx.lineTo(cx - 8, y - 24);
-  ctx.lineTo(cx - 8, y + 16);
-  ctx.lineTo(cx + 8, y + 16);
-  ctx.lineTo(cx + 8, y - 24);
-  ctx.lineTo(cx + 30, y - 24);
-  ctx.closePath();
+  ctx.arc(cx, y, 10, 0, Math.PI * 2);
   ctx.fill();
+}
+
+function drawKicker() {
+  const { x } = state.kicker;
+  const runX = x + Math.sin(state.kicker.runProgress * Math.PI * 6) * 3;
+  const y = state.kicker.y;
+  const bodyTilt = (1 - state.kicker.runProgress) * 6;
+
+  ctx.fillStyle = "#1f1f1f";
+  ctx.beginPath();
+  ctx.arc(runX, y - 50, 11, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffd146";
+  ctx.fillRect(runX - 11, y - 38, 22, 34);
+
+  ctx.lineCap = "round";
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "#2a2a2a";
+  ctx.beginPath();
+  ctx.moveTo(runX - 10, y - 31);
+  ctx.lineTo(runX - 20 - bodyTilt, y - 12);
+  ctx.moveTo(runX + 10, y - 31);
+  ctx.lineTo(runX + 20 + bodyTilt, y - 8);
+
+  const legStride = 8 + state.kicker.legSwing * 3;
+  ctx.moveTo(runX - 5, y - 4);
+  ctx.lineTo(runX - legStride, y + 22);
+  ctx.moveTo(runX + 5, y - 4);
+  ctx.lineTo(runX + legStride, y + 23);
+  ctx.stroke();
 }
 
 function drawBall(x, y, scale = 1) {
@@ -530,19 +630,20 @@ function drawScene() {
   ctx.fillRect(0, 0, canvas.width, 160);
 
   ctx.fillStyle = "#d81f2a";
-  ctx.fillRect(30, 12, canvas.width - 60, 48);
+  ctx.fillRect(18, 10, canvas.width - 36, 50);
   ctx.fillStyle = "#fff";
-  ctx.font = "bold 21px Arial";
-  ctx.fillText("One HEART.", 214, 43);
+  ctx.font = "bold 20px Arial";
+  ctx.fillText("PÊNALTI QUIZ", 145, 43);
 
-  drawCrowdBand(64, 96, "#32445e");
+  drawCrowdBand(62, 74, "#3e4f69");
 
-  ctx.fillStyle = "#0e0f12";
-  ctx.fillRect(0, 160, canvas.width, 108);
+  ctx.fillStyle = "#607287";
+  ctx.fillRect(0, 136, canvas.width, 110);
   drawGoal();
-  drawKeeper();
   drawField();
-  drawArrow();
+  drawKeeper();
+  drawKickMarker();
+  drawKicker();
 }
 
 function draw() {
