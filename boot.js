@@ -28,6 +28,7 @@ function loadCoreOnce() {
 
   const script = document.createElement("script");
   script.src = "core.js?v=20260317b";
+  script.src = "core.js?v=20260316a";
   script.async = false;
   script.onload = () => {
     window.__freekickCoreLoaded = true;
