@@ -117,6 +117,9 @@ const state = {
   },
   kicker: {
     x: BALL_START.x,
+    y: BALL_START.y - 46,
+    runStartY: BALL_START.y - 46,
+    runEndY: BALL_START.y - 12,
     y: BALL_START.y + 62,
     runStartY: BALL_START.y + 62,
     runEndY: BALL_START.y + 20,
@@ -563,6 +566,7 @@ function drawField() {
 
 function drawKickMarker() {
   const cx = canvas.width / 2;
+  const y = BALL_START.y + 28;
   const y = BALL_START.y + 44;
   ctx.fillStyle = "rgba(255,255,255,0.6)";
   ctx.beginPath();
@@ -602,13 +606,13 @@ function drawKicker() {
 }
 
 function drawBall(x, y, scale = 1) {
-  const r = 30 * scale;
+  const r = 21 * scale;
   ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.beginPath();
   ctx.ellipse(x + 4, y + r + 9, r * 0.95, r * 0.35, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
   ctx.strokeStyle = "#ffb300";
   ctx.beginPath();
   ctx.arc(x, y, r + 5, 0, Math.PI * 2);
