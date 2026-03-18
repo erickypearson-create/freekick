@@ -65,6 +65,22 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.5.136/build/pdf.min.js"></script>
-  <script src="boot.js?v=20260317c"></script>
+  <script src="boot.js?v=20260318a"></script>
+  <script>
+    (function () {
+      const ensureCoreLoaded = () => {
+        if (window.__freekickCoreLoaded || window.__freekickCoreLoading) return;
+        const fallbackScript = document.createElement("script");
+        const runtimeBuster = Math.floor(Date.now() / 3600000);
+        fallbackScript.src = `core.js?v=20260318a&h=${runtimeBuster}`;
+        fallbackScript.async = false;
+        document.head.appendChild(fallbackScript);
+      };
+
+      window.addEventListener("load", () => {
+        window.setTimeout(ensureCoreLoaded, 1200);
+      });
+    })();
+  </script>
 </body>
 </html>
