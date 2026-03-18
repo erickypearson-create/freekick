@@ -120,6 +120,9 @@ const state = {
     y: BALL_START.y - 46,
     runStartY: BALL_START.y - 46,
     runEndY: BALL_START.y - 12,
+    y: BALL_START.y + 62,
+    runStartY: BALL_START.y + 62,
+    runEndY: BALL_START.y + 20,
     runProgress: 0,
     legSwing: 0,
   },
@@ -564,6 +567,7 @@ function drawField() {
 function drawKickMarker() {
   const cx = canvas.width / 2;
   const y = BALL_START.y + 28;
+  const y = BALL_START.y + 44;
   ctx.fillStyle = "rgba(255,255,255,0.6)";
   ctx.beginPath();
   ctx.arc(cx, y, 10, 0, Math.PI * 2);

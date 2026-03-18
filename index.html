@@ -67,5 +67,24 @@
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.5.136/build/pdf.min.js"></script>
   <script src="boot.js?v=20260318b"></script>
   <script src="core.js?v=20260318b" defer></script>
+  <script src="boot.js?v=20260318a"></script>
+  <script>
+    (function () {
+      const ensureCoreLoaded = () => {
+        if (window.__freekickCoreLoaded || window.__freekickCoreLoading) return;
+        const fallbackScript = document.createElement("script");
+        const runtimeBuster = Math.floor(Date.now() / 3600000);
+        fallbackScript.src = `core.js?v=20260318a&h=${runtimeBuster}`;
+        fallbackScript.async = false;
+        document.head.appendChild(fallbackScript);
+      };
+
+      window.addEventListener("load", () => {
+        window.setTimeout(ensureCoreLoaded, 1200);
+      });
+    })();
+  </script>
+  <script src="boot.js?v=20260317b"></script>
+  <script src="boot.js?v=20260316a"></script>
 </body>
 </html>
