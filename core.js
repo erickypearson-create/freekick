@@ -30,6 +30,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
+const STORAGE_KEY = "freekick-question-bank-v10";
 const STORAGE_KEY = "freekick-question-bank-v9";
 const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
@@ -174,6 +175,7 @@ const state = {
   selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
+  generated: { orderedPointer: 0, randomQueue: [] },
   generated: { usedKeys: [], levelPointer: 0 },
   worksheetActivities: [],
   outcome: "-",
@@ -431,6 +433,28 @@ function getAllGeneratedEntries() {
   return LEVEL_SEQUENCE.flatMap((level) => (ENGLISH_POOL[level] || []).map((entry, index) => ({ ...entry, level, key: `${level}-${index}` })));
 }
 
+const GENERATED_ENTRIES = getAllGeneratedEntries();
+
+function resetGeneratedCycle() {
+  state.generated.orderedPointer = 0;
+  state.generated.randomQueue = [];
+}
+
+function nextGeneratedBase() {
+  if (!GENERATED_ENTRIES.length) {
+    return buildChoiceQuestion("Choose the correct option:", "hello", ["bye", "green", "quickly"]);
+  }
+
+  if (state.bank.mode === "random") {
+    if (!state.generated.randomQueue.length) {
+      state.generated.randomQueue = shuffle(GENERATED_ENTRIES);
+    }
+    return state.generated.randomQueue.pop();
+  }
+
+  const entry = GENERATED_ENTRIES[state.generated.orderedPointer % GENERATED_ENTRIES.length];
+  state.generated.orderedPointer += 1;
+  return entry;
 function resetGeneratedCycle() {
   state.generated.usedKeys = [];
   state.generated.levelPointer = 0;
@@ -491,6 +515,7 @@ function loadBank() {
       questions: Array.isArray(parsed.questions) ? parsed.questions.filter(isValid) : [],
       pointer: 0,
     };
+    state.generated = { orderedPointer: 0, randomQueue: [] };
     state.generated = { usedKeys: [], levelPointer: 0 };
     state.generated = {
       usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
@@ -501,6 +526,7 @@ function loadBank() {
     renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
+    state.generated = { orderedPointer: 0, randomQueue: [] };
     state.generated = { usedKeys: [], levelPointer: 0 };
     state.worksheetActivities = [];
     renderWorksheetActivities();
