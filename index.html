@@ -81,6 +81,13 @@
     }
   </script>
   <script src="boot.js?v=20260319i"></script>
+  <script src="boot.js?v=20260319h"></script>
+  <script src="core.js?v=20260319h"></script>
+  <script src="boot.js?v=20260319g"></script>
+  <script src="core.js?v=20260319g"></script>
+  <script src="core.js?v=20260319f"></script>
+  <script src="core.js?v=20260319e"></script>
+  <script src="boot.js?v=20260319e"></script>
   <script>
     (function () {
       const ensureCoreLoaded = () => {
@@ -88,6 +95,7 @@
         const fallbackScript = document.createElement("script");
         const runtimeBuster = Math.floor(Date.now() / 3600000);
         fallbackScript.src = `core.js?v=20260319i&h=${runtimeBuster}`;
+        fallbackScript.src = `core.js?v=20260319e&h=${runtimeBuster}`;
         fallbackScript.async = false;
         document.head.appendChild(fallbackScript);
       };
