@@ -945,6 +945,9 @@ async function parsePdf(file) {
   if (!pdfjs) throw new Error("PDF indisponível no navegador. Recarregue a página e tente novamente.");
   const bytes = await file.arrayBuffer();
   const pdf = await pdfjs.getDocument({ data: bytes }).promise;
+  if (!window.pdfjsLib) throw new Error("PDF indisponível");
+  const bytes = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
   const chunks = [];
   const activities = [];
 
