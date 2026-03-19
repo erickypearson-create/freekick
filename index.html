@@ -80,23 +80,7 @@
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.5.136/build/pdf.worker.min.js";
     }
   </script>
-  <script src="core.js?v=20260319d"></script>
-  <script src="boot.js?v=20260319c"></script>
-  <script>
-    (function () {
-      const ensureCoreLoaded = () => {
-        if (window.__freekickCoreLoaded || window.__freekickCoreLoading) return;
-        const fallbackScript = document.createElement("script");
-        const runtimeBuster = Math.floor(Date.now() / 3600000);
-        fallbackScript.src = `core.js?v=20260319c&h=${runtimeBuster}`;
-        fallbackScript.async = false;
-        document.head.appendChild(fallbackScript);
-      };
-
-      window.addEventListener("load", () => {
-        window.setTimeout(ensureCoreLoaded, 1200);
-      });
-    })();
-  </script>
+  <script src="boot.js?v=20260319h"></script>
+  <script src="core.js?v=20260319h"></script>
 </body>
 </html>
