@@ -82,5 +82,24 @@
   </script>
   <script src="boot.js?v=20260319g"></script>
   <script src="core.js?v=20260319g"></script>
+  <script src="core.js?v=20260319f"></script>
+  <script src="core.js?v=20260319e"></script>
+  <script src="boot.js?v=20260319e"></script>
+  <script>
+    (function () {
+      const ensureCoreLoaded = () => {
+        if (window.__freekickCoreLoaded || window.__freekickCoreLoading) return;
+        const fallbackScript = document.createElement("script");
+        const runtimeBuster = Math.floor(Date.now() / 3600000);
+        fallbackScript.src = `core.js?v=20260319e&h=${runtimeBuster}`;
+        fallbackScript.async = false;
+        document.head.appendChild(fallbackScript);
+      };
+
+      window.addEventListener("load", () => {
+        window.setTimeout(ensureCoreLoaded, 1200);
+      });
+    })();
+  </script>
 </body>
 </html>
