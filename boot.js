@@ -29,6 +29,7 @@ function loadCoreOnce() {
   const script = document.createElement("script");
   const runtimeBuster = Math.floor(Date.now() / 3600000);
   script.src = `core.js?v=20260319d&h=${runtimeBuster}`;
+  script.src = `core.js?v=20260319c&h=${runtimeBuster}`;
   script.async = false;
   script.onload = () => {
     window.__freekickCoreLoaded = true;
