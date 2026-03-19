@@ -161,3 +161,129 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+.activity-section {
+  margin-top: 1rem;
+  background: #0d1f34;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.activity-section-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.activity-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.activity-card {
+  border: 1px solid #355275;
+  border-radius: 12px;
+  background: #10243b;
+  overflow: hidden;
+}
+
+.activity-card-header {
+  padding: 0.8rem 0.85rem 0.2rem;
+}
+
+.activity-card-header h3 {
+  margin: 0.15rem 0 0;
+  font-size: 1rem;
+}
+
+.activity-kicker {
+  margin: 0;
+  color: #7ed0ff;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.activity-card-body {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) 1fr;
+  gap: 0.9rem;
+  padding: 0.2rem 0.85rem 0.85rem;
+}
+
+.activity-thumb {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #4b6b8e;
+  background: #fff;
+}
+
+.activity-content {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.activity-block,
+.activity-fill,
+.activity-reference {
+  background: #0b1a2c;
+  border: 1px solid #294766;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+.activity-item-label {
+  margin-top: 0;
+  font-weight: 700;
+}
+
+.activity-options {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.activity-options label,
+.activity-fill {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.activity-fill input,
+.order-answer {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #5f8db4;
+  background: #17324f;
+  color: #fff;
+  padding: 0.65rem 0.7rem;
+}
+
+.token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.55rem 0;
+}
+
+.token-chip {
+  width: auto;
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  background: linear-gradient(180deg, #3f7db0, #25577f);
+}
+
+.activity-reference summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.activity-reference-list {
+  margin: 0.65rem 0 0;
+  padding-left: 1.1rem;
+  color: #d4e8fb;
+}
+
+@media (max-width: 900px) {
+  .activity-card-body {
+    grid-template-columns: 1fr;
+  }
+}
