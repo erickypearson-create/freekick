@@ -908,6 +908,12 @@ async function parseDocx(file) {
   return parseBlocks(value);
 }
 
+function getPdfJsLib() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  if (window["pdfjs-dist/build/pdf"]) return window["pdfjs-dist/build/pdf"];
+  return null;
+}
+
 async function renderPdfPagePreview(page) {
   const viewport = page.getViewport({ scale: 0.55 });
   const previewCanvas = document.createElement("canvas");
@@ -935,6 +941,10 @@ async function extractTextWithOcr(canvas) {
 }
 
 async function parsePdf(file) {
+  const pdfjs = getPdfJsLib();
+  if (!pdfjs) throw new Error("PDF indisponível no navegador. Recarregue a página e tente novamente.");
+  const bytes = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: bytes }).promise;
   if (!window.pdfjsLib) throw new Error("PDF indisponível");
   const bytes = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
