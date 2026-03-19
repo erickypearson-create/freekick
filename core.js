@@ -29,7 +29,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
-const STORAGE_KEY = "freekick-question-bank-v7";
+const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -79,18 +79,68 @@ const PENALTY_AREA = {
 };
 const KICKER_ANIMATION_MS = 460;
 
-const ENGLISH_POOL = {
-  grammar: [
-    { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
-    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
-    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
-  ],
-  vocabulary: [
-    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
-    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
-    { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
-  ],
-};
+const LEVEL_SEQUENCE = ["A1", "A2", "B1", "B2", "C1"];
+
+function buildChoiceQuestion(prompt, correct, wrong) {
+  return { prompt, correct, wrong };
+}
+
+function buildEnglishPool() {
+  return {
+    A1: [
+      buildChoiceQuestion("Choose the correct sentence about routines:", "She gets up at seven every day.", ["She get up at seven every day.", "She getting up at seven every day.", "She gets up at seven every days."]),
+      buildChoiceQuestion("Choose the word that completes: 'I ___ breakfast at 7:00.'", "have", ["am", "do", "make"]),
+      buildChoiceQuestion("Choose the correct sentence about school:", "They study English on Mondays.", ["They studies English on Mondays.", "They studying English on Mondays.", "They study English at Mondays."]),
+      buildChoiceQuestion("Choose the correct question:", "Where do you live?", ["Where you live?", "Where does you live?", "Where do you lives?"]),
+      buildChoiceQuestion("Choose the correct sentence about possession:", "This is my brother's backpack.", ["This is my brothers backpack.", "This are my brother's backpack.", "This is my brother backpacks."]),
+      buildChoiceQuestion("Choose the correct preposition:", "The cat is under the chair.", ["The cat is between the chair.", "The cat is on the chair under.", "The cat is in the chair under."]),
+      buildChoiceQuestion("Choose the correct sentence about daily actions:", "He plays soccer after school.", ["He play soccer after school.", "He is play soccer after school.", "He plays soccer in after school."]),
+      buildChoiceQuestion("Choose the correct plural form:", "children", ["childs", "childrens", "childes"]),
+    ],
+    A2: [
+      buildChoiceQuestion("Choose the correct option:", "He doesn't like rainy days.", ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."]),
+      buildChoiceQuestion("Choose the opposite of 'difficult':", "easy", ["heavy", "noisy", "dangerous"]),
+      buildChoiceQuestion("Choose the best option for the past tense:", "We visited our grandparents last weekend.", ["We visit our grandparents last weekend.", "We visits our grandparents last weekend.", "We have visit our grandparents last weekend."]),
+      buildChoiceQuestion("Choose the sentence with the correct quantifier:", "There are a few apples on the table.", ["There is a few apples on the table.", "There are much apples on the table.", "There are a little apples on the table."]),
+      buildChoiceQuestion("Choose the best response:", "I'm going to the library because I need to study.", ["I go to library because study.", "I'm go to the library because I need study.", "I going to the library because I need to studying."]),
+      buildChoiceQuestion("Choose the correct comparative form:", "My backpack is heavier than yours.", ["My backpack is more heavy than yours.", "My backpack is heaviest than yours.", "My backpack heavier than yours is."]),
+      buildChoiceQuestion("Choose the correct sentence about plans:", "She is going to travel in July.", ["She going to travel in July.", "She is go to travel in July.", "She is going travel in July."]),
+      buildChoiceQuestion("Choose the best option for advice:", "You should drink more water.", ["You should to drink more water.", "You should drinking more water.", "You should drinks more water."]),
+    ],
+    B1: [
+      buildChoiceQuestion("Pick the grammatically correct sentence:", "Where does your brother work?", ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"]),
+      buildChoiceQuestion("Choose the best synonym for 'happy':", "glad", ["angry", "tired", "lazy"]),
+      buildChoiceQuestion("Choose the sentence with the correct present perfect form:", "I have never tried sushi before.", ["I never have tried sushi before.", "I has never tried sushi before.", "I have never try sushi before."]),
+      buildChoiceQuestion("Choose the best connector:", "I stayed home because it was raining.", ["I stayed home although it was raining because.", "I stayed home so it was raining.", "I stayed home during it was raining."]),
+      buildChoiceQuestion("Choose the most natural sentence:", "If I have time, I'll call you tonight.", ["If I will have time, I'll call you tonight.", "If I have time, I call you tonight.", "If I had time, I'll call you tonight."]),
+      buildChoiceQuestion("Choose the sentence with the correct modal:", "You must wear a seat belt in the car.", ["You must to wear a seat belt in the car.", "You must wearing a seat belt in the car.", "You must wears a seat belt in the car."]),
+      buildChoiceQuestion("Choose the sentence with the correct relative pronoun:", "The teacher who helped me was very kind.", ["The teacher which helped me was very kind.", "The teacher whose helped me was very kind.", "The teacher where helped me was very kind."]),
+      buildChoiceQuestion("Choose the best paraphrase of 'give up':", "stop trying", ["arrive early", "speak louder", "return later"]),
+    ],
+    B2: [
+      buildChoiceQuestion("Choose the sentence with the correct tense:", "By the time we arrived, the movie had started.", ["By the time we arrived, the movie has started.", "By the time we arrived, the movie started already.", "By the time we arrived, the movie was start."]),
+      buildChoiceQuestion("Choose the best connector:", "although", ["because of", "during", "unless not"]),
+      buildChoiceQuestion("Choose the most accurate sentence:", "She would have joined us if she had finished work earlier.", ["She would joined us if she had finished work earlier.", "She would have joined us if she finished work earlier.", "She had joined us if she would have finished work earlier."]),
+      buildChoiceQuestion("Choose the sentence with the correct passive voice:", "The new bridge was built in 2019.", ["The new bridge built in 2019.", "The new bridge was build in 2019.", "The new bridge has build in 2019."]),
+      buildChoiceQuestion("Choose the best reporting verb sentence:", "He admitted taking the money.", ["He admitted to take the money.", "He admitted take the money.", "He admitted that taking the money."]),
+      buildChoiceQuestion("Choose the correct sentence with 'used to':", "I used to play chess every weekend.", ["I use to play chess every weekend.", "I used to played chess every weekend.", "I was used to play chess every weekend."]),
+      buildChoiceQuestion("Choose the sentence with the best formal register:", "We regret to inform you that your application was unsuccessful.", ["We are sorry to say your application didn't work out, okay?", "We regret inform you your application was unsuccessful.", "We regret to informing you that your application was unsuccessful."]),
+      buildChoiceQuestion("Choose the most suitable linker:", "Therefore", ["Meanwhile not", "Despite", "Besides of"]),
+    ],
+    C1: [
+      buildChoiceQuestion("Choose the most natural formal sentence:", "Had I known about the delay, I would have left later.", ["If I knew about the delay, I would left later.", "Had I knew about the delay, I would have left later.", "If I had know about the delay, I left later."]),
+      buildChoiceQuestion("Choose the word closest in meaning to 'thorough':", "comprehensive", ["careless", "brief", "uncertain"]),
+      buildChoiceQuestion("Choose the sentence with the most precise academic style:", "The findings suggest a significant correlation between sleep and memory retention.", ["The findings say sleep and memory are kind of linked.", "The findings suggests a significant correlation between sleep and memory retention.", "The findings suggest a significant correlation among sleep with memory retention."]),
+      buildChoiceQuestion("Choose the best inversion structure:", "Rarely have we seen such an impressive performance.", ["Rarely we have seen such an impressive performance.", "Rarely have seen we such an impressive performance.", "Rarely we saw such an impressive performance have."]),
+      buildChoiceQuestion("Choose the best collocation:", "reach a consensus", ["arrive a consensus", "touch a consensus", "make a consensus together"]),
+      buildChoiceQuestion("Choose the sentence with the correct nuanced modal:", "You might have overlooked the final paragraph.", ["You may had overlooked the final paragraph.", "You might overlooked the final paragraph.", "You might have overlook the final paragraph."]),
+      buildChoiceQuestion("Choose the most natural paraphrase of 'the plan fell through':", "the plan failed unexpectedly", ["the plan moved ahead quickly", "the plan became more expensive", "the plan was written down"]),
+      buildChoiceQuestion("Choose the sentence with the correct advanced linker:", "Notwithstanding the criticism, the proposal was approved.", ["Notwithstanding of the criticism, the proposal was approved.", "Notwithstanding the criticism, the proposal approved.", "Notwithstanding criticism, was the proposal approved."]),
+    ],
+  };
+}
+
+const ENGLISH_POOL = buildEnglishPool();
 
 const state = {
   phase: "idle",
@@ -100,6 +150,7 @@ const state = {
   selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
+  generated: { usedKeys: [], levelPointer: 0 },
   worksheetActivities: [],
   outcome: "-",
   ball: {
@@ -352,15 +403,56 @@ function isValid(q) {
     && OPTIONS[q.dimension].includes(q.commandValue);
 }
 
+function getAllGeneratedEntries() {
+  return LEVEL_SEQUENCE.flatMap((level) => (ENGLISH_POOL[level] || []).map((entry, index) => ({ ...entry, level, key: `${level}-${index}` })));
+}
+
+function resetGeneratedCycle() {
+  state.generated.usedKeys = [];
+  state.generated.levelPointer = 0;
+}
+
+function nextGeneratedBase() {
+  const allEntries = getAllGeneratedEntries();
+  const unusedEntries = allEntries.filter((entry) => !state.generated.usedKeys.includes(entry.key));
+
+  if (!unusedEntries.length) {
+    resetGeneratedCycle();
+    return nextGeneratedBase();
+  }
+
+  if (state.bank.mode === "random") {
+    const picked = randomChoice(unusedEntries);
+    state.generated.usedKeys.push(picked.key);
+    return picked;
+  }
+
+  for (let offset = 0; offset < LEVEL_SEQUENCE.length; offset += 1) {
+    const levelIndex = (state.generated.levelPointer + offset) % LEVEL_SEQUENCE.length;
+    const level = LEVEL_SEQUENCE[levelIndex];
+    const candidates = unusedEntries.filter((entry) => entry.level === level);
+    if (!candidates.length) continue;
+    const picked = randomChoice(candidates);
+    state.generated.usedKeys.push(picked.key);
+    state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
+    return picked;
+  }
+
+  const fallback = unusedEntries[0];
+  state.generated.usedKeys.push(fallback.key);
+  return fallback;
+}
+
 function buildRandomEnglishQuestion(dimension) {
-  const base = randomChoice(Math.random() > 0.5 ? ENGLISH_POOL.grammar : ENGLISH_POOL.vocabulary);
+  const base = nextGeneratedBase();
   const options = shuffle([base.correct, ...base.wrong]).slice(0, 4);
   return {
     dimension,
-    prompt: `${base.prompt}`,
+    prompt: `${base.prompt} (${base.level})`,
     choices: options,
     correctAnswer: String.fromCharCode(65 + options.findIndex((o) => o === base.correct)),
     commandValue: randomChoice(OPTIONS[dimension]),
+    level: base.level,
   };
 }
 
@@ -375,10 +467,16 @@ function loadBank() {
       questions: parsed.questions.filter(isValid),
       pointer: 0,
     };
+    state.generated = {
+      usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
+      levelPointer: Number.isInteger(parsed.generated?.levelPointer) ? parsed.generated.levelPointer : 0,
+    };
     state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
+    ui.modeSelect.value = state.bank.mode;
     renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
+    state.generated = { usedKeys: [], levelPointer: 0 };
     state.worksheetActivities = [];
     renderWorksheetActivities();
   }
@@ -401,7 +499,21 @@ function questionForDimension(dimension) {
   return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension);
 }
 
+function persistBank() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
+}
+
+function syncQuestionMode() {
+  const nextMode = ui.modeSelect.value === "random" ? "random" : "ordered";
+  if (state.bank.mode === nextMode) return;
+  state.bank.mode = nextMode;
+  state.bank.pointer = 0;
+  resetGeneratedCycle();
+  persistBank();
+}
+
 function startRound() {
+  syncQuestionMode();
   state.phase = "quiz";
   state.index = 0;
   state.roundAnswers = {};
@@ -877,6 +989,27 @@ async function parseCsvOrTsv(file) {
   return mapRows(rows);
 }
 
+function normalizeHeader(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function pickRowValue(row, aliases) {
+  const normalizedMap = Object.entries(row).reduce((acc, [key, value]) => {
+    acc[normalizeHeader(key)] = value;
+    return acc;
+  }, {});
+
+  for (const alias of aliases) {
+    const value = normalizedMap[normalizeHeader(alias)];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
 function parseDimension(value) {
   const v = String(value || "").trim().toLowerCase();
   if (["direction", "direcao", "direção"].includes(v)) return "direction";
@@ -887,11 +1020,17 @@ function parseDimension(value) {
 
 function mapRows(rows) {
   return rows.map((r) => ({
-    dimension: parseDimension(r.dimension || r.Dimension),
-    prompt: String(r.prompt || r.Prompt || "").trim(),
-    choices: [r.choiceA || r.ChoiceA, r.choiceB || r.ChoiceB, r.choiceC || r.ChoiceC, r.choiceD || r.ChoiceD].filter(Boolean),
-    correctAnswer: String(r.correctAnswer || r.CorrectAnswer || "").trim().toUpperCase(),
-    commandValue: String(r.commandValue || r.CommandValue || "").trim().toLowerCase(),
+    dimension: parseDimension(pickRowValue(r, ["dimension", "dimensao", "direcao/altura/forca"])),
+    prompt: String(pickRowValue(r, ["prompt", "pergunta", "question", "enunciado"])).trim(),
+    choices: [
+      pickRowValue(r, ["choiceA", "alternativaA", "opcaoA", "a"]),
+      pickRowValue(r, ["choiceB", "alternativaB", "opcaoB", "b"]),
+      pickRowValue(r, ["choiceC", "alternativaC", "opcaoC", "c"]),
+      pickRowValue(r, ["choiceD", "alternativaD", "opcaoD", "d"]),
+    ].map((value) => String(value || "").trim()).filter(Boolean),
+    correctAnswer: String(pickRowValue(r, ["correctAnswer", "correct", "respostacorreta", "gabarito"])).trim().toUpperCase(),
+    commandValue: String(pickRowValue(r, ["commandValue", "command", "valorcomando", "acao", "action"])).trim().toLowerCase(),
+    level: String(pickRowValue(r, ["level", "nivel", "cefr"])).trim().toUpperCase(),
   })).filter(isValid);
 }
 
@@ -1013,8 +1152,9 @@ async function loadQuestionsFromFile() {
   }
 
   state.bank = { mode: ui.modeSelect.value === "random" ? "random" : "ordered", questions, pointer: 0 };
+  resetGeneratedCycle();
   state.worksheetActivities = worksheetActivities;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, worksheetActivities }));
+  persistBank();
   renderWorksheetActivities();
   const parts = [];
   if (questions.length) parts.push(`${questions.length} pergunta(s) do quiz`);
@@ -1024,10 +1164,10 @@ async function loadQuestionsFromFile() {
 
 function downloadTemplate() {
   const csv = [
-    "dimension,prompt,choiceA,choiceB,choiceC,choiceD,correctAnswer,commandValue",
-    "direction,Where does she live?,She live at school.,She lives at school.,She lives at her house.,She living at home.,C,left",
-    "height,Choose the correct sentence.,He don't like apples.,He doesn't likes apples.,He doesn't like apples.,He not like apples.,C,high",
-    "power,Choose the best synonym for happy.,sad,angry,glad,noisy,C,strong",
+    "dimension,prompt,choiceA,choiceB,choiceC,choiceD,correctAnswer,commandValue,level",
+    "direction,Where does she live?,She live at school.,She lives at school.,She lives at her house.,She living at home.,C,left,A1",
+    "height,Choose the correct sentence.,He don't like apples.,He doesn't likes apples.,He doesn't like apples.,He not like apples.,C,high,A2",
+    "power,Choose the best synonym for happy.,sad,angry,glad,noisy,C,strong,B1",
   ].join("\n");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1043,6 +1183,7 @@ ui.startBtn.addEventListener("click", startRound);
 ui.nextBtn.addEventListener("click", startRound);
 ui.loadQuestionsBtn.addEventListener("click", loadQuestionsFromFile);
 ui.downloadTemplateBtn.addEventListener("click", downloadTemplate);
+ui.modeSelect.addEventListener("change", syncQuestionMode);
 
 loadBank();
 renderWorksheetActivities();
