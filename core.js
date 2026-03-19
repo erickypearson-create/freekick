@@ -30,6 +30,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
+const STORAGE_KEY = "freekick-question-bank-v11";
 const STORAGE_KEY = "freekick-question-bank-v10";
 const STORAGE_KEY = "freekick-question-bank-v9";
 const STORAGE_KEY = "freekick-question-bank-v8";
