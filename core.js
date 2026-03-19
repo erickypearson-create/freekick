@@ -3,6 +3,7 @@
 
 if (window.__freekickBooted) return;
 window.__freekickBooted = true;
+window.__freekickCoreLoaded = true;
 
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
@@ -29,6 +30,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
+const STORAGE_KEY = "freekick-question-bank-v9";
 const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
@@ -484,12 +486,12 @@ function loadBank() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.questions)) return;
     state.bank = {
       mode: parsed.mode === "random" ? "random" : "ordered",
-      questions: parsed.questions.filter(isValid),
+      questions: Array.isArray(parsed.questions) ? parsed.questions.filter(isValid) : [],
       pointer: 0,
     };
+    state.generated = { usedKeys: [], levelPointer: 0 };
     state.generated = {
       usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
       levelPointer: Number.isInteger(parsed.generated?.levelPointer) ? parsed.generated.levelPointer : 0,
@@ -523,6 +525,11 @@ function questionForDimension(dimension) {
 }
 
 function persistBank() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    mode: state.bank.mode,
+    questions: state.bank.questions,
+    worksheetActivities: state.worksheetActivities,
+  }));
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
 }
 
