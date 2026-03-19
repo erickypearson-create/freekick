@@ -80,6 +80,67 @@ const PENALTY_AREA = {
 const KICKER_ANIMATION_MS = 460;
 
 const LEVEL_SEQUENCE = ["A1", "A2", "B1", "B2", "C1"];
+
+function buildChoiceQuestion(prompt, correct, wrong) {
+  return { prompt, correct, wrong };
+}
+
+function buildEnglishPool() {
+  return {
+    A1: [
+      buildChoiceQuestion("Choose the correct sentence about routines:", "She gets up at seven every day.", ["She get up at seven every day.", "She getting up at seven every day.", "She gets up at seven every days."]),
+      buildChoiceQuestion("Choose the word that completes: 'I ___ breakfast at 7:00.'", "have", ["am", "do", "make"]),
+      buildChoiceQuestion("Choose the correct sentence about school:", "They study English on Mondays.", ["They studies English on Mondays.", "They studying English on Mondays.", "They study English at Mondays."]),
+      buildChoiceQuestion("Choose the correct question:", "Where do you live?", ["Where you live?", "Where does you live?", "Where do you lives?"]),
+      buildChoiceQuestion("Choose the correct sentence about possession:", "This is my brother's backpack.", ["This is my brothers backpack.", "This are my brother's backpack.", "This is my brother backpacks."]),
+      buildChoiceQuestion("Choose the correct preposition:", "The cat is under the chair.", ["The cat is between the chair.", "The cat is on the chair under.", "The cat is in the chair under."]),
+      buildChoiceQuestion("Choose the correct sentence about daily actions:", "He plays soccer after school.", ["He play soccer after school.", "He is play soccer after school.", "He plays soccer in after school."]),
+      buildChoiceQuestion("Choose the correct plural form:", "children", ["childs", "childrens", "childes"]),
+    ],
+    A2: [
+      buildChoiceQuestion("Choose the correct option:", "He doesn't like rainy days.", ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."]),
+      buildChoiceQuestion("Choose the opposite of 'difficult':", "easy", ["heavy", "noisy", "dangerous"]),
+      buildChoiceQuestion("Choose the best option for the past tense:", "We visited our grandparents last weekend.", ["We visit our grandparents last weekend.", "We visits our grandparents last weekend.", "We have visit our grandparents last weekend."]),
+      buildChoiceQuestion("Choose the sentence with the correct quantifier:", "There are a few apples on the table.", ["There is a few apples on the table.", "There are much apples on the table.", "There are a little apples on the table."]),
+      buildChoiceQuestion("Choose the best response:", "I'm going to the library because I need to study.", ["I go to library because study.", "I'm go to the library because I need study.", "I going to the library because I need to studying."]),
+      buildChoiceQuestion("Choose the correct comparative form:", "My backpack is heavier than yours.", ["My backpack is more heavy than yours.", "My backpack is heaviest than yours.", "My backpack heavier than yours is."]),
+      buildChoiceQuestion("Choose the correct sentence about plans:", "She is going to travel in July.", ["She going to travel in July.", "She is go to travel in July.", "She is going travel in July."]),
+      buildChoiceQuestion("Choose the best option for advice:", "You should drink more water.", ["You should to drink more water.", "You should drinking more water.", "You should drinks more water."]),
+    ],
+    B1: [
+      buildChoiceQuestion("Pick the grammatically correct sentence:", "Where does your brother work?", ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"]),
+      buildChoiceQuestion("Choose the best synonym for 'happy':", "glad", ["angry", "tired", "lazy"]),
+      buildChoiceQuestion("Choose the sentence with the correct present perfect form:", "I have never tried sushi before.", ["I never have tried sushi before.", "I has never tried sushi before.", "I have never try sushi before."]),
+      buildChoiceQuestion("Choose the best connector:", "I stayed home because it was raining.", ["I stayed home although it was raining because.", "I stayed home so it was raining.", "I stayed home during it was raining."]),
+      buildChoiceQuestion("Choose the most natural sentence:", "If I have time, I'll call you tonight.", ["If I will have time, I'll call you tonight.", "If I have time, I call you tonight.", "If I had time, I'll call you tonight."]),
+      buildChoiceQuestion("Choose the sentence with the correct modal:", "You must wear a seat belt in the car.", ["You must to wear a seat belt in the car.", "You must wearing a seat belt in the car.", "You must wears a seat belt in the car."]),
+      buildChoiceQuestion("Choose the sentence with the correct relative pronoun:", "The teacher who helped me was very kind.", ["The teacher which helped me was very kind.", "The teacher whose helped me was very kind.", "The teacher where helped me was very kind."]),
+      buildChoiceQuestion("Choose the best paraphrase of 'give up':", "stop trying", ["arrive early", "speak louder", "return later"]),
+    ],
+    B2: [
+      buildChoiceQuestion("Choose the sentence with the correct tense:", "By the time we arrived, the movie had started.", ["By the time we arrived, the movie has started.", "By the time we arrived, the movie started already.", "By the time we arrived, the movie was start."]),
+      buildChoiceQuestion("Choose the best connector:", "although", ["because of", "during", "unless not"]),
+      buildChoiceQuestion("Choose the most accurate sentence:", "She would have joined us if she had finished work earlier.", ["She would joined us if she had finished work earlier.", "She would have joined us if she finished work earlier.", "She had joined us if she would have finished work earlier."]),
+      buildChoiceQuestion("Choose the sentence with the correct passive voice:", "The new bridge was built in 2019.", ["The new bridge built in 2019.", "The new bridge was build in 2019.", "The new bridge has build in 2019."]),
+      buildChoiceQuestion("Choose the best reporting verb sentence:", "He admitted taking the money.", ["He admitted to take the money.", "He admitted take the money.", "He admitted that taking the money."]),
+      buildChoiceQuestion("Choose the correct sentence with 'used to':", "I used to play chess every weekend.", ["I use to play chess every weekend.", "I used to played chess every weekend.", "I was used to play chess every weekend."]),
+      buildChoiceQuestion("Choose the sentence with the best formal register:", "We regret to inform you that your application was unsuccessful.", ["We are sorry to say your application didn't work out, okay?", "We regret inform you your application was unsuccessful.", "We regret to informing you that your application was unsuccessful."]),
+      buildChoiceQuestion("Choose the most suitable linker:", "Therefore", ["Meanwhile not", "Despite", "Besides of"]),
+    ],
+    C1: [
+      buildChoiceQuestion("Choose the most natural formal sentence:", "Had I known about the delay, I would have left later.", ["If I knew about the delay, I would left later.", "Had I knew about the delay, I would have left later.", "If I had know about the delay, I left later."]),
+      buildChoiceQuestion("Choose the word closest in meaning to 'thorough':", "comprehensive", ["careless", "brief", "uncertain"]),
+      buildChoiceQuestion("Choose the sentence with the most precise academic style:", "The findings suggest a significant correlation between sleep and memory retention.", ["The findings say sleep and memory are kind of linked.", "The findings suggests a significant correlation between sleep and memory retention.", "The findings suggest a significant correlation among sleep with memory retention."]),
+      buildChoiceQuestion("Choose the best inversion structure:", "Rarely have we seen such an impressive performance.", ["Rarely we have seen such an impressive performance.", "Rarely have seen we such an impressive performance.", "Rarely we saw such an impressive performance have."]),
+      buildChoiceQuestion("Choose the best collocation:", "reach a consensus", ["arrive a consensus", "touch a consensus", "make a consensus together"]),
+      buildChoiceQuestion("Choose the sentence with the correct nuanced modal:", "You might have overlooked the final paragraph.", ["You may had overlooked the final paragraph.", "You might overlooked the final paragraph.", "You might have overlook the final paragraph."]),
+      buildChoiceQuestion("Choose the most natural paraphrase of 'the plan fell through':", "the plan failed unexpectedly", ["the plan moved ahead quickly", "the plan became more expensive", "the plan was written down"]),
+      buildChoiceQuestion("Choose the sentence with the correct advanced linker:", "Notwithstanding the criticism, the proposal was approved.", ["Notwithstanding of the criticism, the proposal was approved.", "Notwithstanding the criticism, the proposal approved.", "Notwithstanding criticism, was the proposal approved."]),
+    ],
+  };
+}
+
+const ENGLISH_POOL = buildEnglishPool();
 const ENGLISH_POOL = {
   A1: [
     { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
@@ -393,6 +454,7 @@ function nextGeneratedBase() {
     const level = LEVEL_SEQUENCE[levelIndex];
     const candidates = unusedEntries.filter((entry) => entry.level === level);
     if (!candidates.length) continue;
+    const picked = randomChoice(candidates);
     const picked = candidates[0];
     state.generated.usedKeys.push(picked.key);
     state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
