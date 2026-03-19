@@ -158,4 +158,7 @@ Isso é útil para páginas parecidas com workbook/output, em que a atividade ve
 Quando nenhum banco válido é carregado, o jogo monta perguntas próprias sem repetição até esgotar o conjunto disponível, sorteando variações diferentes dentro de cada nível.
 
 - modo **Em ordem**: progride pelos níveis `A1`, `A2`, `B1`, `B2` e `C1`, ciclando nessa sequência e sorteando uma pergunta diferente dentro do nível atual;
+Quando nenhum banco válido é carregado, o jogo monta perguntas próprias sem repetição até esgotar o conjunto disponível.
+
+- modo **Em ordem**: progride pelos níveis `A1`, `A2`, `B1`, `B2` e `C1`, ciclando nessa sequência;
 - modo **Aleatório**: sorteia perguntas e níveis de forma aleatória, ainda evitando repetição até consumir o conjunto.

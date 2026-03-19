@@ -31,6 +31,7 @@ const ui = {
 };
 
 const STORAGE_KEY = "freekick-question-bank-v9";
+const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -142,6 +143,28 @@ function buildEnglishPool() {
 }
 
 const ENGLISH_POOL = buildEnglishPool();
+const ENGLISH_POOL = {
+  A1: [
+    { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
+    { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
+  ],
+  A2: [
+    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
+    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
+  ],
+  B1: [
+    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
+    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
+  ],
+  B2: [
+    { prompt: "Choose the sentence with the correct tense:", correct: "By the time we arrived, the movie had started.", wrong: ["By the time we arrived, the movie has started.", "By the time we arrived, the movie started already.", "By the time we arrived, the movie was start."] },
+    { prompt: "Choose the best connector:", correct: "although", wrong: ["because of", "during", "unless not"] },
+  ],
+  C1: [
+    { prompt: "Choose the most natural formal sentence:", correct: "Had I known about the delay, I would have left later.", wrong: ["If I knew about the delay, I would left later.", "Had I knew about the delay, I would have left later.", "If I had know about the delay, I left later."] },
+    { prompt: "Choose the word closest in meaning to 'thorough':", correct: "comprehensive", wrong: ["careless", "brief", "uncertain"] },
+  ],
+};
 
 const state = {
   phase: "idle",
@@ -434,6 +457,7 @@ function nextGeneratedBase() {
     const candidates = unusedEntries.filter((entry) => entry.level === level);
     if (!candidates.length) continue;
     const picked = randomChoice(candidates);
+    const picked = candidates[0];
     state.generated.usedKeys.push(picked.key);
     state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
     return picked;
@@ -468,6 +492,10 @@ function loadBank() {
       pointer: 0,
     };
     state.generated = { usedKeys: [], levelPointer: 0 };
+    state.generated = {
+      usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
+      levelPointer: Number.isInteger(parsed.generated?.levelPointer) ? parsed.generated.levelPointer : 0,
+    };
     state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
     ui.modeSelect.value = state.bank.mode;
     renderWorksheetActivities();
@@ -502,6 +530,7 @@ function persistBank() {
     questions: state.bank.questions,
     worksheetActivities: state.worksheetActivities,
   }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
 }
 
 function syncQuestionMode() {
