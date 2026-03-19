@@ -6,7 +6,11 @@ window.__freekickBooted = true;
 window.__freekickCoreLoaded = true;
 
 const canvas = document.getElementById("pitch");
+if (!canvas) return;
 const ctx = canvas.getContext("2d");
+if (!ctx) return;
+
+window.__freekickBooted = true;
 
 const ui = {
   phase: document.getElementById("phase"),
