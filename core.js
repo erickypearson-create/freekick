@@ -2,10 +2,13 @@
 "use strict";
 
 if (window.__freekickBooted) return;
-window.__freekickBooted = true;
 
 const canvas = document.getElementById("pitch");
+if (!canvas) return;
 const ctx = canvas.getContext("2d");
+if (!ctx) return;
+
+window.__freekickBooted = true;
 
 const ui = {
   phase: document.getElementById("phase"),
@@ -29,7 +32,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
-const STORAGE_KEY = "freekick-question-bank-v7";
+const STORAGE_KEY = "freekick-question-bank-v11";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -376,6 +379,7 @@ function loadBank() {
       pointer: 0,
     };
     state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
+    ui.modeSelect.value = state.bank.mode;
     renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
