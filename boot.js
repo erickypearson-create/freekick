@@ -1,7 +1,6 @@
 (function () {
 "use strict";
 
-// Bootstrap mínimo, seguro para múltiplos carregamentos.
 if (window.__freekickBootstrapLoaded) return;
 window.__freekickBootstrapLoaded = true;
 
