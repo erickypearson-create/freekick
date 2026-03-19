@@ -21,6 +21,27 @@ async function cleanupLegacyClientCache() {
   }
 }
 
+function loadCoreOnce() {
+  if (window.__freekickCoreLoading || window.__freekickCoreLoaded) return;
+  window.__freekickCoreLoading = true;
+
+  const script = document.createElement("script");
+  const runtimeBuster = Math.floor(Date.now() / 3600000);
+  script.src = `core.js?v=20260319e&h=${runtimeBuster}`;
+  script.async = false;
+  script.onload = () => {
+    window.__freekickCoreLoaded = true;
+    window.__freekickCoreLoading = false;
+  };
+  script.onerror = () => {
+    window.__freekickCoreLoading = false;
+    console.error("Falha ao carregar core.js");
+  };
+
+  document.head.appendChild(script);
+}
+
+loadCoreOnce();
 cleanupLegacyClientCache();
 
 })();
