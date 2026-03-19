@@ -29,7 +29,7 @@ const ui = {
   activitySummary: document.getElementById("activitySummary"),
 };
 
-const STORAGE_KEY = "freekick-question-bank-v7";
+const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -79,16 +79,27 @@ const PENALTY_AREA = {
 };
 const KICKER_ANIMATION_MS = 460;
 
+const LEVEL_SEQUENCE = ["A1", "A2", "B1", "B2", "C1"];
 const ENGLISH_POOL = {
-  grammar: [
+  A1: [
     { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
-    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
-    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
-  ],
-  vocabulary: [
-    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
-    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
     { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
+  ],
+  A2: [
+    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
+    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
+  ],
+  B1: [
+    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
+    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
+  ],
+  B2: [
+    { prompt: "Choose the sentence with the correct tense:", correct: "By the time we arrived, the movie had started.", wrong: ["By the time we arrived, the movie has started.", "By the time we arrived, the movie started already.", "By the time we arrived, the movie was start."] },
+    { prompt: "Choose the best connector:", correct: "although", wrong: ["because of", "during", "unless not"] },
+  ],
+  C1: [
+    { prompt: "Choose the most natural formal sentence:", correct: "Had I known about the delay, I would have left later.", wrong: ["If I knew about the delay, I would left later.", "Had I knew about the delay, I would have left later.", "If I had know about the delay, I left later."] },
+    { prompt: "Choose the word closest in meaning to 'thorough':", correct: "comprehensive", wrong: ["careless", "brief", "uncertain"] },
   ],
 };
 
@@ -100,6 +111,7 @@ const state = {
   selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
+  generated: { usedKeys: [], levelPointer: 0 },
   worksheetActivities: [],
   outcome: "-",
   ball: {
@@ -352,15 +364,56 @@ function isValid(q) {
     && OPTIONS[q.dimension].includes(q.commandValue);
 }
 
+function getAllGeneratedEntries() {
+  return LEVEL_SEQUENCE.flatMap((level) => (ENGLISH_POOL[level] || []).map((entry, index) => ({ ...entry, level, key: `${level}-${index}` })));
+}
+
+function resetGeneratedCycle() {
+  state.generated.usedKeys = [];
+  state.generated.levelPointer = 0;
+}
+
+function nextGeneratedBase() {
+  const allEntries = getAllGeneratedEntries();
+  const unusedEntries = allEntries.filter((entry) => !state.generated.usedKeys.includes(entry.key));
+
+  if (!unusedEntries.length) {
+    resetGeneratedCycle();
+    return nextGeneratedBase();
+  }
+
+  if (state.bank.mode === "random") {
+    const picked = randomChoice(unusedEntries);
+    state.generated.usedKeys.push(picked.key);
+    return picked;
+  }
+
+  for (let offset = 0; offset < LEVEL_SEQUENCE.length; offset += 1) {
+    const levelIndex = (state.generated.levelPointer + offset) % LEVEL_SEQUENCE.length;
+    const level = LEVEL_SEQUENCE[levelIndex];
+    const candidates = unusedEntries.filter((entry) => entry.level === level);
+    if (!candidates.length) continue;
+    const picked = candidates[0];
+    state.generated.usedKeys.push(picked.key);
+    state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
+    return picked;
+  }
+
+  const fallback = unusedEntries[0];
+  state.generated.usedKeys.push(fallback.key);
+  return fallback;
+}
+
 function buildRandomEnglishQuestion(dimension) {
-  const base = randomChoice(Math.random() > 0.5 ? ENGLISH_POOL.grammar : ENGLISH_POOL.vocabulary);
+  const base = nextGeneratedBase();
   const options = shuffle([base.correct, ...base.wrong]).slice(0, 4);
   return {
     dimension,
-    prompt: `${base.prompt}`,
+    prompt: `${base.prompt} (${base.level})`,
     choices: options,
     correctAnswer: String.fromCharCode(65 + options.findIndex((o) => o === base.correct)),
     commandValue: randomChoice(OPTIONS[dimension]),
+    level: base.level,
   };
 }
 
@@ -375,10 +428,16 @@ function loadBank() {
       questions: parsed.questions.filter(isValid),
       pointer: 0,
     };
+    state.generated = {
+      usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
+      levelPointer: Number.isInteger(parsed.generated?.levelPointer) ? parsed.generated.levelPointer : 0,
+    };
     state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
+    ui.modeSelect.value = state.bank.mode;
     renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
+    state.generated = { usedKeys: [], levelPointer: 0 };
     state.worksheetActivities = [];
     renderWorksheetActivities();
   }
@@ -401,7 +460,21 @@ function questionForDimension(dimension) {
   return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension);
 }
 
+function persistBank() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
+}
+
+function syncQuestionMode() {
+  const nextMode = ui.modeSelect.value === "random" ? "random" : "ordered";
+  if (state.bank.mode === nextMode) return;
+  state.bank.mode = nextMode;
+  state.bank.pointer = 0;
+  resetGeneratedCycle();
+  persistBank();
+}
+
 function startRound() {
+  syncQuestionMode();
   state.phase = "quiz";
   state.index = 0;
   state.roundAnswers = {};
@@ -877,6 +950,27 @@ async function parseCsvOrTsv(file) {
   return mapRows(rows);
 }
 
+function normalizeHeader(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function pickRowValue(row, aliases) {
+  const normalizedMap = Object.entries(row).reduce((acc, [key, value]) => {
+    acc[normalizeHeader(key)] = value;
+    return acc;
+  }, {});
+
+  for (const alias of aliases) {
+    const value = normalizedMap[normalizeHeader(alias)];
+    if (value !== undefined && value !== null && String(value).trim() !== "") return value;
+  }
+  return "";
+}
+
 function parseDimension(value) {
   const v = String(value || "").trim().toLowerCase();
   if (["direction", "direcao", "direção"].includes(v)) return "direction";
@@ -887,11 +981,17 @@ function parseDimension(value) {
 
 function mapRows(rows) {
   return rows.map((r) => ({
-    dimension: parseDimension(r.dimension || r.Dimension),
-    prompt: String(r.prompt || r.Prompt || "").trim(),
-    choices: [r.choiceA || r.ChoiceA, r.choiceB || r.ChoiceB, r.choiceC || r.ChoiceC, r.choiceD || r.ChoiceD].filter(Boolean),
-    correctAnswer: String(r.correctAnswer || r.CorrectAnswer || "").trim().toUpperCase(),
-    commandValue: String(r.commandValue || r.CommandValue || "").trim().toLowerCase(),
+    dimension: parseDimension(pickRowValue(r, ["dimension", "dimensao", "direcao/altura/forca"])),
+    prompt: String(pickRowValue(r, ["prompt", "pergunta", "question", "enunciado"])).trim(),
+    choices: [
+      pickRowValue(r, ["choiceA", "alternativaA", "opcaoA", "a"]),
+      pickRowValue(r, ["choiceB", "alternativaB", "opcaoB", "b"]),
+      pickRowValue(r, ["choiceC", "alternativaC", "opcaoC", "c"]),
+      pickRowValue(r, ["choiceD", "alternativaD", "opcaoD", "d"]),
+    ].map((value) => String(value || "").trim()).filter(Boolean),
+    correctAnswer: String(pickRowValue(r, ["correctAnswer", "correct", "respostacorreta", "gabarito"])).trim().toUpperCase(),
+    commandValue: String(pickRowValue(r, ["commandValue", "command", "valorcomando", "acao", "action"])).trim().toLowerCase(),
+    level: String(pickRowValue(r, ["level", "nivel", "cefr"])).trim().toUpperCase(),
   })).filter(isValid);
 }
 
@@ -1013,8 +1113,9 @@ async function loadQuestionsFromFile() {
   }
 
   state.bank = { mode: ui.modeSelect.value === "random" ? "random" : "ordered", questions, pointer: 0 };
+  resetGeneratedCycle();
   state.worksheetActivities = worksheetActivities;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, worksheetActivities }));
+  persistBank();
   renderWorksheetActivities();
   const parts = [];
   if (questions.length) parts.push(`${questions.length} pergunta(s) do quiz`);
@@ -1024,10 +1125,10 @@ async function loadQuestionsFromFile() {
 
 function downloadTemplate() {
   const csv = [
-    "dimension,prompt,choiceA,choiceB,choiceC,choiceD,correctAnswer,commandValue",
-    "direction,Where does she live?,She live at school.,She lives at school.,She lives at her house.,She living at home.,C,left",
-    "height,Choose the correct sentence.,He don't like apples.,He doesn't likes apples.,He doesn't like apples.,He not like apples.,C,high",
-    "power,Choose the best synonym for happy.,sad,angry,glad,noisy,C,strong",
+    "dimension,prompt,choiceA,choiceB,choiceC,choiceD,correctAnswer,commandValue,level",
+    "direction,Where does she live?,She live at school.,She lives at school.,She lives at her house.,She living at home.,C,left,A1",
+    "height,Choose the correct sentence.,He don't like apples.,He doesn't likes apples.,He doesn't like apples.,He not like apples.,C,high,A2",
+    "power,Choose the best synonym for happy.,sad,angry,glad,noisy,C,strong,B1",
   ].join("\n");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1043,6 +1144,7 @@ ui.startBtn.addEventListener("click", startRound);
 ui.nextBtn.addEventListener("click", startRound);
 ui.loadQuestionsBtn.addEventListener("click", loadQuestionsFromFile);
 ui.downloadTemplateBtn.addEventListener("click", downloadTemplate);
+ui.modeSelect.addEventListener("change", syncQuestionMode);
 
 loadBank();
 renderWorksheetActivities();
