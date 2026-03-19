@@ -87,6 +87,9 @@ Colunas esperadas:
 - `choiceA`, `choiceB`, `choiceC`, `choiceD`
 - `correctAnswer` (`A`, `B`, `C`, `D`)
 - `commandValue`
+- `level` (opcional no arquivo; o modo sem template gera progressão automática de `A1` a `C1`)
+
+O importador agora aceita cabeçalhos equivalentes em variações comuns do Excel, como `Prompt`/`Pergunta`, `ChoiceA`/`AlternativaA`, `CorrectAnswer`/`Gabarito` e `CommandValue`/`Ação`.
 
 Use o botão **Baixar template** para gerar um CSV de exemplo.
 
@@ -131,6 +134,9 @@ Campos esperados por pergunta:
 - `choiceA`, `choiceB`, `choiceC`, `choiceD`
 - `correctAnswer` (`A`, `B`, `C` ou `D`)
 - `commandValue`
+- `level` (opcional no arquivo; o modo sem template gera progressão automática de `A1` a `C1`)
+
+O importador agora aceita cabeçalhos equivalentes em variações comuns do Excel, como `Prompt`/`Pergunta`, `ChoiceA`/`AlternativaA`, `CorrectAnswer`/`Gabarito` e `CommandValue`/`Ação`.
 
 Use o botão **Baixar template** para gerar um CSV de exemplo.
 
@@ -145,3 +151,11 @@ Além de tentar mapear perguntas no formato do quiz, o carregamento de `.pdf` ag
 - usa OCR como fallback quando a página do PDF for basicamente uma imagem/print.
 
 Isso é útil para páginas parecidas com workbook/output, em que a atividade vem diagramada com imagens e frases fora de uma tabela CSV.
+
+
+## Geração automática sem template
+
+Quando nenhum banco válido é carregado, o jogo monta perguntas próprias sem repetição até esgotar o conjunto disponível.
+
+- modo **Em ordem**: progride pelos níveis `A1`, `A2`, `B1`, `B2` e `C1`, ciclando nessa sequência;
+- modo **Aleatório**: sorteia perguntas e níveis de forma aleatória, ainda evitando repetição até consumir o conjunto.
