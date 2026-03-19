@@ -133,3 +133,15 @@ Campos esperados por pergunta:
 - `commandValue`
 
 Use o botão **Baixar template** para gerar um CSV de exemplo.
+
+
+## PDF com atividades de livro
+
+Além de tentar mapear perguntas no formato do quiz, o carregamento de `.pdf` agora também:
+
+- gera uma miniatura da página;
+- detecta blocos de atividade por heurística;
+- replica exercícios de múltipla escolha, lacunas e ordenação;
+- usa OCR como fallback quando a página do PDF for basicamente uma imagem/print.
+
+Isso é útil para páginas parecidas com workbook/output, em que a atividade vem diagramada com imagens e frases fora de uma tabela CSV.

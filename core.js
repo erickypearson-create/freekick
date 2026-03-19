@@ -24,9 +24,12 @@ const ui = {
   loadQuestionsBtn: document.getElementById("loadQuestionsBtn"),
   downloadTemplateBtn: document.getElementById("downloadTemplateBtn"),
   uploadInfo: document.getElementById("uploadInfo"),
+  activitySection: document.getElementById("activitySection"),
+  activityList: document.getElementById("activityList"),
+  activitySummary: document.getElementById("activitySummary"),
 };
 
-const STORAGE_KEY = "freekick-question-bank-v6";
+const STORAGE_KEY = "freekick-question-bank-v7";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -97,6 +100,7 @@ const state = {
   selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
+  worksheetActivities: [],
   outcome: "-",
   ball: {
     x: BALL_START.x,
@@ -124,6 +128,201 @@ const state = {
     legSwing: 0,
   },
 };
+
+
+const ACTIVITY_LABEL_RE = /^([a-z])(?:[.)]|$)\s*/i;
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizeWhitespace(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function sentenceCase(value) {
+  const text = normalizeWhitespace(value);
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+function splitTextIntoLines(items, pageHeight) {
+  const rows = [];
+  const sorted = [...items].sort((a, b) => {
+    const ay = a.transform?.[5] || 0;
+    const by = b.transform?.[5] || 0;
+    if (Math.abs(by - ay) > 4) return by - ay;
+    return (a.transform?.[4] || 0) - (b.transform?.[4] || 0);
+  });
+
+  sorted.forEach((item) => {
+    const str = normalizeWhitespace(item.str);
+    if (!str) return;
+    const x = item.transform?.[4] || 0;
+    const y = pageHeight - (item.transform?.[5] || 0);
+    const last = rows[rows.length - 1];
+    if (last && Math.abs(last.y - y) < 8) {
+      last.parts.push({ x, str });
+      last.y = (last.y + y) / 2;
+    } else {
+      rows.push({ y, parts: [{ x, str }] });
+    }
+  });
+
+  return rows
+    .map((row) => ({
+      y: row.y,
+      text: row.parts.sort((a, b) => a.x - b.x).map((part) => part.str).join(" ").replace(/\s+/g, " ").trim(),
+    }))
+    .filter((row) => row.text);
+}
+
+function isLikelyInstruction(text) {
+  return /^\d+\s/.test(text) || /choose|match|look at|write|put in order|complete/i.test(text);
+}
+
+function extractChoicePairs(lines) {
+  const groups = [];
+  let current = null;
+  lines.forEach((line) => {
+    const match = line.match(ACTIVITY_LABEL_RE);
+    if (match) {
+      if (current) groups.push(current);
+      current = { label: match[1].toLowerCase(), text: line.replace(ACTIVITY_LABEL_RE, "").trim(), options: [] };
+      return;
+    }
+    if (!current) return;
+    current.options.push(line);
+  });
+  if (current) groups.push(current);
+  return groups.filter((group) => group.text || group.options.length);
+}
+
+function buildActivitySections(pageNumber, lines, image) {
+  const sections = [];
+  let current = null;
+
+  lines.forEach((line) => {
+    if (isLikelyInstruction(line.text)) {
+      if (current && current.lines.length) sections.push(current);
+      current = {
+        pageNumber,
+        title: line.text,
+        image,
+        lines: [],
+      };
+      return;
+    }
+
+    if (!current) {
+      current = { pageNumber, title: `Página ${pageNumber}`, image, lines: [] };
+    }
+    current.lines.push(line.text);
+  });
+
+  if (current && current.lines.length) sections.push(current);
+
+  return sections.map((section, index) => {
+    const choiceGroups = extractChoicePairs(section.lines);
+    const fillItems = section.lines.filter((line) => /_{3,}/.test(line));
+    const orderingItems = section.lines.filter((line) => /\|/.test(line));
+
+    let type = "reference";
+    if (choiceGroups.length >= 2 && choiceGroups.some((group) => group.options.length >= 2)) type = "multiple-choice";
+    else if (fillItems.length >= 1) type = "fill-in-the-blank";
+    else if (orderingItems.length >= 1) type = "put-in-order";
+
+    return {
+      id: `page-${pageNumber}-section-${index + 1}`,
+      pageNumber,
+      title: section.title,
+      image: section.image,
+      type,
+      rawLines: section.lines,
+      choiceGroups,
+      fillItems,
+      orderingItems: orderingItems.map((line) => ({
+        prompt: line,
+        tokens: line.split("|").map((part) => normalizeWhitespace(part)).filter(Boolean),
+      })),
+    };
+  });
+}
+
+function renderWorksheetActivities() {
+  if (!ui.activitySection || !ui.activityList || !ui.activitySummary) return;
+
+  ui.activityList.innerHTML = "";
+  const activities = state.worksheetActivities || [];
+  if (!activities.length) {
+    ui.activitySection.classList.add("hidden");
+    ui.activitySummary.textContent = "";
+    return;
+  }
+
+  ui.activitySection.classList.remove("hidden");
+  ui.activitySummary.textContent = `PDF interpretado em ${activities.length} atividade(s) replicável(is).`;
+
+  activities.forEach((activity, index) => {
+    const card = document.createElement("article");
+    card.className = "activity-card";
+
+    const imageHtml = activity.image ? `<img class="activity-thumb" src="${activity.image}" alt="Prévia da página ${activity.pageNumber}" />` : "";
+    const referenceHtml = activity.rawLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("");
+
+    let bodyHtml = "";
+    if (activity.type === "multiple-choice") {
+      bodyHtml = activity.choiceGroups.map((group) => `
+        <div class="activity-block">
+          <p class="activity-item-label">${escapeHtml(group.label)}) ${escapeHtml(group.text || "Observe a imagem e marque a resposta correta.")}</p>
+          <div class="activity-options">${group.options.map((option) => `<label><input type="radio" name="${activity.id}-${group.label}"> <span>${escapeHtml(option)}</span></label>`).join("")}</div>
+        </div>
+      `).join("");
+    } else if (activity.type === "fill-in-the-blank") {
+      bodyHtml = activity.fillItems.map((line, lineIndex) => `
+        <label class="activity-fill">
+          <span>${escapeHtml(line.replace(/_{3,}/g, "_____"))}</span>
+          <input type="text" placeholder="Digite sua resposta" aria-label="Resposta ${lineIndex + 1} da atividade ${index + 1}">
+        </label>
+      `).join("");
+    } else if (activity.type === "put-in-order") {
+      bodyHtml = activity.orderingItems.map((item) => `
+        <div class="activity-block">
+          <p>${escapeHtml(item.prompt)}</p>
+          <div class="token-row">${item.tokens.map((token) => `<button type="button" class="token-chip">${escapeHtml(token)}</button>`).join("")}</div>
+          <input type="text" class="order-answer" placeholder="Monte a frase na ordem correta">
+        </div>
+      `).join("");
+    } else {
+      bodyHtml = `<ul class="activity-reference-list">${referenceHtml}</ul>`;
+    }
+
+    card.innerHTML = `
+      <div class="activity-card-header">
+        <div>
+          <p class="activity-kicker">Página ${activity.pageNumber} · ${sentenceCase(activity.type.replace(/-/g, " "))}</p>
+          <h3>${escapeHtml(activity.title)}</h3>
+        </div>
+      </div>
+      <div class="activity-card-body">
+        ${imageHtml}
+        <div class="activity-content">
+          ${bodyHtml}
+          <details class="activity-reference">
+            <summary>Texto detectado da página</summary>
+            <ul class="activity-reference-list">${referenceHtml}</ul>
+          </details>
+        </div>
+      </div>
+    `;
+
+    ui.activityList.appendChild(card);
+  });
+}
 
 function shuffle(arr) {
   const copy = [...arr];
@@ -176,8 +375,12 @@ function loadBank() {
       questions: parsed.questions.filter(isValid),
       pointer: 0,
     };
+    state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
+    renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
+    state.worksheetActivities = [];
+    renderWorksheetActivities();
   }
 }
 
@@ -705,16 +908,56 @@ async function parseDocx(file) {
   return parseBlocks(value);
 }
 
+async function renderPdfPagePreview(page) {
+  const viewport = page.getViewport({ scale: 0.55 });
+  const previewCanvas = document.createElement("canvas");
+  const previewCtx = previewCanvas.getContext("2d");
+  previewCanvas.width = Math.ceil(viewport.width);
+  previewCanvas.height = Math.ceil(viewport.height);
+  await page.render({ canvasContext: previewCtx, viewport }).promise;
+  return {
+    canvas: previewCanvas,
+    image: previewCanvas.toDataURL("image/jpeg", 0.82),
+  };
+}
+
+async function extractTextWithOcr(canvas) {
+  if (!window.Tesseract) return [];
+  try {
+    const result = await window.Tesseract.recognize(canvas, "eng");
+    return String(result?.data?.text || "")
+      .split(/\n+/)
+      .map((line) => ({ text: normalizeWhitespace(line) }))
+      .filter((line) => line.text);
+  } catch (_) {
+    return [];
+  }
+}
+
 async function parsePdf(file) {
   if (!window.pdfjsLib) throw new Error("PDF indisponível");
-  const pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const bytes = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
   const chunks = [];
+  const activities = [];
+
   for (let p = 1; p <= pdf.numPages; p += 1) {
     const page = await pdf.getPage(p);
+    const viewport = page.getViewport({ scale: 1 });
     const content = await page.getTextContent();
-    chunks.push(content.items.map((it) => it.str).join(" "));
+    let lines = splitTextIntoLines(content.items, viewport.height);
+    const preview = await renderPdfPagePreview(page);
+    if (!lines.length) {
+      lines = await extractTextWithOcr(preview.canvas);
+    }
+    chunks.push(lines.map((line) => line.text).join("\n"));
+    activities.push(...buildActivitySections(p, lines, preview.image));
   }
-  return parseBlocks(chunks.join("\n\n"));
+
+  return {
+    questions: parseBlocks(chunks.join("\n\n")),
+    activities,
+  };
 }
 
 function parseBlocks(text) {
@@ -740,26 +983,35 @@ async function loadQuestionsFromFile() {
 
   const ext = file.name.toLowerCase().split(".").pop();
   let questions = [];
+  let worksheetActivities = [];
 
   try {
     if (ext === "csv") questions = await parseCsvOrTsv(file);
     else if (ext === "xlsx") questions = await parseXlsx(file);
     else if (ext === "docx") questions = await parseDocx(file);
-    else if (ext === "pdf") questions = await parsePdf(file);
-    else throw new Error("Formato não suportado");
+    else if (ext === "pdf") {
+      const parsed = await parsePdf(file);
+      questions = parsed.questions;
+      worksheetActivities = parsed.activities;
+    } else throw new Error("Formato não suportado");
   } catch (err) {
     ui.uploadInfo.textContent = `Erro de leitura: ${err.message}`;
     return;
   }
 
-  if (!questions.length) {
+  if (!questions.length && !worksheetActivities.length) {
     ui.uploadInfo.textContent = "Nenhuma pergunta válida encontrada. Use o template.";
     return;
   }
 
   state.bank = { mode: ui.modeSelect.value === "random" ? "random" : "ordered", questions, pointer: 0 };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.bank));
-  ui.uploadInfo.textContent = `Banco carregado com ${questions.length} perguntas.`;
+  state.worksheetActivities = worksheetActivities;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, worksheetActivities }));
+  renderWorksheetActivities();
+  const parts = [];
+  if (questions.length) parts.push(`${questions.length} pergunta(s) do quiz`);
+  if (worksheetActivities.length) parts.push(`${worksheetActivities.length} atividade(s) replicada(s) do PDF`);
+  ui.uploadInfo.textContent = `Banco carregado com ${parts.join(" e ")}.`;
 }
 
 function downloadTemplate() {
@@ -785,6 +1037,7 @@ ui.loadQuestionsBtn.addEventListener("click", loadQuestionsFromFile);
 ui.downloadTemplateBtn.addEventListener("click", downloadTemplate);
 
 loadBank();
+renderWorksheetActivities();
 draw();
 
 })();
