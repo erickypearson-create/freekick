@@ -508,9 +508,9 @@ function persistBank() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     mode: state.bank.mode,
     questions: state.bank.questions,
+    generated: state.generated,
     worksheetActivities: state.worksheetActivities,
   }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
 }
 
 function syncQuestionMode() {
