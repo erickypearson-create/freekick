@@ -10,8 +10,6 @@ if (!canvas) return;
 const ctx = canvas.getContext("2d");
 if (!ctx) return;
 
-window.__freekickBooted = true;
-
 const ui = {
   phase: document.getElementById("phase"),
   question: document.getElementById("question"),
@@ -35,9 +33,6 @@ const ui = {
 };
 
 const STORAGE_KEY = "freekick-question-bank-v11";
-const STORAGE_KEY = "freekick-question-bank-v10";
-const STORAGE_KEY = "freekick-question-bank-v9";
-const STORAGE_KEY = "freekick-question-bank-v8";
 const DIMENSIONS = ["direction", "height", "power"];
 const LABELS = {
   direction: "Direção",
@@ -149,28 +144,6 @@ function buildEnglishPool() {
 }
 
 const ENGLISH_POOL = buildEnglishPool();
-const ENGLISH_POOL = {
-  A1: [
-    { prompt: "Choose the correct sentence:", correct: "She lives in a small house.", wrong: ["She live in a small house.", "She living in a small house.", "She lives at a small house."] },
-    { prompt: "Choose the word that completes: 'I ___ breakfast at 7:00.'", correct: "have", wrong: ["am", "do", "make"] },
-  ],
-  A2: [
-    { prompt: "Choose the correct option:", correct: "He doesn't like rainy days.", wrong: ["He don't likes rainy days.", "He doesn't likes rainy days.", "He not like rainy days."] },
-    { prompt: "Choose the opposite of 'difficult':", correct: "easy", wrong: ["heavy", "noisy", "dangerous"] },
-  ],
-  B1: [
-    { prompt: "Pick the grammatically correct sentence:", correct: "Where does your brother work?", wrong: ["Where do your brother works?", "Where does your brother works?", "Where your brother does work?"] },
-    { prompt: "Choose the best synonym for 'happy':", correct: "glad", wrong: ["angry", "tired", "lazy"] },
-  ],
-  B2: [
-    { prompt: "Choose the sentence with the correct tense:", correct: "By the time we arrived, the movie had started.", wrong: ["By the time we arrived, the movie has started.", "By the time we arrived, the movie started already.", "By the time we arrived, the movie was start."] },
-    { prompt: "Choose the best connector:", correct: "although", wrong: ["because of", "during", "unless not"] },
-  ],
-  C1: [
-    { prompt: "Choose the most natural formal sentence:", correct: "Had I known about the delay, I would have left later.", wrong: ["If I knew about the delay, I would left later.", "Had I knew about the delay, I would have left later.", "If I had know about the delay, I left later."] },
-    { prompt: "Choose the word closest in meaning to 'thorough':", correct: "comprehensive", wrong: ["careless", "brief", "uncertain"] },
-  ],
-};
 
 const state = {
   phase: "idle",
@@ -180,7 +153,6 @@ const state = {
   selectedAnswers: {},
   playerChoices: {},
   bank: { mode: "ordered", questions: [], pointer: 0 },
-  generated: { orderedPointer: 0, randomQueue: [] },
   generated: { usedKeys: [], levelPointer: 0 },
   worksheetActivities: [],
   outcome: "-",
@@ -441,32 +413,12 @@ function getAllGeneratedEntries() {
 const GENERATED_ENTRIES = getAllGeneratedEntries();
 
 function resetGeneratedCycle() {
-  state.generated.orderedPointer = 0;
-  state.generated.randomQueue = [];
-}
-
-function nextGeneratedBase() {
-  if (!GENERATED_ENTRIES.length) {
-    return buildChoiceQuestion("Choose the correct option:", "hello", ["bye", "green", "quickly"]);
-  }
-
-  if (state.bank.mode === "random") {
-    if (!state.generated.randomQueue.length) {
-      state.generated.randomQueue = shuffle(GENERATED_ENTRIES);
-    }
-    return state.generated.randomQueue.pop();
-  }
-
-  const entry = GENERATED_ENTRIES[state.generated.orderedPointer % GENERATED_ENTRIES.length];
-  state.generated.orderedPointer += 1;
-  return entry;
-function resetGeneratedCycle() {
   state.generated.usedKeys = [];
   state.generated.levelPointer = 0;
 }
 
 function nextGeneratedBase() {
-  const allEntries = getAllGeneratedEntries();
+  const allEntries = GENERATED_ENTRIES;
   const unusedEntries = allEntries.filter((entry) => !state.generated.usedKeys.includes(entry.key));
 
   if (!unusedEntries.length) {
@@ -485,7 +437,6 @@ function nextGeneratedBase() {
     const level = LEVEL_SEQUENCE[levelIndex];
     const candidates = unusedEntries.filter((entry) => entry.level === level);
     if (!candidates.length) continue;
-    const picked = randomChoice(candidates);
     const picked = candidates[0];
     state.generated.usedKeys.push(picked.key);
     state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
@@ -520,7 +471,6 @@ function loadBank() {
       questions: Array.isArray(parsed.questions) ? parsed.questions.filter(isValid) : [],
       pointer: 0,
     };
-    state.generated = { orderedPointer: 0, randomQueue: [] };
     state.generated = { usedKeys: [], levelPointer: 0 };
     state.generated = {
       usedKeys: Array.isArray(parsed.generated?.usedKeys) ? parsed.generated.usedKeys : [],
@@ -531,7 +481,6 @@ function loadBank() {
     renderWorksheetActivities();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
-    state.generated = { orderedPointer: 0, randomQueue: [] };
     state.generated = { usedKeys: [], levelPointer: 0 };
     state.worksheetActivities = [];
     renderWorksheetActivities();
@@ -559,9 +508,9 @@ function persistBank() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     mode: state.bank.mode,
     questions: state.bank.questions,
+    generated: state.generated,
     worksheetActivities: state.worksheetActivities,
   }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state.bank, generated: state.generated, worksheetActivities: state.worksheetActivities }));
 }
 
 function syncQuestionMode() {
