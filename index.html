@@ -37,7 +37,21 @@
         <p id="uploadInfo" class="upload-info">Sem arquivo carregado. Usando perguntas padrão.</p>
       </div>
 
-      <button id="startBtn" type="button">Iniciar cobrança</button>
+      <section class="level-box">
+        <div class="level-box-header">
+          <div>
+            <h2>Régua de nível GSE + CEFR</h2>
+            <p class="panel-hint">Escolha o nível antes de iniciar. As perguntas de direção, altura e força respeitarão essa faixa.</p>
+          </div>
+          <div class="selected-level">
+            <span>Nível selecionado</span>
+            <strong id="selectedLevel">Nenhum</strong>
+          </div>
+        </div>
+        <div id="levelRuler" class="level-ruler" role="list" aria-label="Seleção de nível GSE e CEFR"></div>
+      </section>
+
+      <button id="startBtn" type="button" disabled>Iniciar cobrança</button>
 
       <section class="round-box">
         <div class="round-grid">
