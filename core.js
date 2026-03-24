@@ -1000,6 +1000,74 @@ function drawBall(x, y, scale = 1) {
   ctx.fill();
 }
 
+function drawBrandBanner() {
+  const x = 18;
+  const y = 10;
+  const w = canvas.width - 36;
+  const h = 50;
+
+  const bannerGradient = ctx.createLinearGradient(x, y, x, y + h);
+  bannerGradient.addColorStop(0, "#1c4f9a");
+  bannerGradient.addColorStop(1, "#123b79");
+  ctx.fillStyle = bannerGradient;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.lineWidth = 1;
+  for (let i = -h; i < w + h; i += 11) {
+    ctx.beginPath();
+    ctx.moveTo(x + i, y);
+    ctx.lineTo(x + i + h, y + h);
+    ctx.stroke();
+  }
+  for (let i = 0; i < w + h; i += 11) {
+    ctx.beginPath();
+    ctx.moveTo(x + i, y + h);
+    ctx.lineTo(x + i - h, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const logoCx = x + 28;
+  const logoCy = y + h / 2;
+  const logoR = 17;
+  ctx.fillStyle = "#ff2f3e";
+  ctx.beginPath();
+  ctx.arc(logoCx, logoCy, logoR, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(logoCx - 12, logoCy + 5);
+  ctx.quadraticCurveTo(logoCx - 2, logoCy + 6, logoCx + 6, logoCy + 2);
+  ctx.quadraticCurveTo(logoCx + 12, logoCy - 1, logoCx + 13, logoCy + 6);
+  ctx.quadraticCurveTo(logoCx + 10, logoCy + 3, logoCx + 3, logoCy + 5);
+  ctx.quadraticCurveTo(logoCx - 4, logoCy + 8, logoCx - 12, logoCy + 11);
+  ctx.quadraticCurveTo(logoCx - 9, logoCy + 8, logoCx - 5, logoCy + 6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(logoCx + 1, logoCy - 3);
+  ctx.quadraticCurveTo(logoCx + 6, logoCy - 7, logoCx + 10, logoCy - 3);
+  ctx.quadraticCurveTo(logoCx + 6, logoCy - 4, logoCx + 2, logoCy - 1);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#ff2f3e";
+  ctx.beginPath();
+  ctx.arc(logoCx + 6, logoCy - 2, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px Arial";
+  ctx.fillText("WizKick", x + 52, y + 34);
+}
+
 function drawScene() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1009,11 +1077,7 @@ function drawScene() {
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvas.width, 160);
 
-  ctx.fillStyle = "#d81f2a";
-  ctx.fillRect(18, 10, canvas.width - 36, 50);
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 20px Arial";
-  ctx.fillText("PÊNALTI QUIZ", 145, 43);
+  drawBrandBanner();
 
   drawCrowdBand(62, 74, "#3e4f69");
 
