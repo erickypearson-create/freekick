@@ -729,9 +729,7 @@ function getOppositeKeeperDirection(direction) {
 
 function getGoalKeeperTarget(commands, ballTarget) {
   const oppositeDirection = getOppositeKeeperDirection(commands.direction);
-  const keepCenter = randomChoice([true, false]);
-  const targetDirection = keepCenter ? "center" : oppositeDirection;
-  return getKeeperLaneX(targetDirection);
+  return getKeeperLaneX(oppositeDirection);
 }
 
 function getPostKeeperTarget(commands, ballTarget) {
@@ -799,7 +797,7 @@ function resolveShot() {
   } else if (outcome === "post") {
     state.keeper.targetX = getPostKeeperTarget(resolved, target);
   } else {
-    state.keeper.targetX = randomChoice([canvas.width / 2 - 90, canvas.width / 2, canvas.width / 2 + 90]);
+    state.keeper.targetX = randomChoice([canvas.width / 2 - 90, canvas.width / 2 + 90]);
   }
 
   const messages = {
