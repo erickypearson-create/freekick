@@ -715,6 +715,43 @@ function targetFromCommands(commands) {
   return { x, y };
 }
 
+function getKeeperLaneX(direction) {
+  if (direction === "left") return canvas.width / 2 - 90;
+  if (direction === "right") return canvas.width / 2 + 90;
+  return canvas.width / 2;
+}
+
+function getOppositeKeeperDirection(direction) {
+  if (direction === "left") return "right";
+  if (direction === "right") return "left";
+  return randomChoice(["left", "right"]);
+}
+
+function getGoalKeeperTarget(commands, ballTarget) {
+  const oppositeDirection = getOppositeKeeperDirection(commands.direction);
+  const keepCenter = randomChoice([true, false]);
+  const targetDirection = keepCenter ? "center" : oppositeDirection;
+  return getKeeperLaneX(targetDirection);
+}
+
+function getPostKeeperTarget(commands, ballTarget) {
+  const goOpposite = Math.random() < 0.5;
+  if (goOpposite) {
+    return getKeeperLaneX(getOppositeKeeperDirection(commands.direction));
+  }
+
+  // Vai para o mesmo lado sem alcançar a bola.
+  const sameLane = getKeeperLaneX(commands.direction);
+  const fallbackOffset = commands.direction === "left" ? 36 : -36;
+  if (commands.direction === "center") {
+    return randomChoice([canvas.width / 2 - 54, canvas.width / 2 + 54]);
+  }
+
+  const nonCatchX = sameLane + fallbackOffset;
+  if (commands.direction === "left") return Math.min(ballTarget.x - 20, nonCatchX);
+  return Math.max(ballTarget.x + 20, nonCatchX);
+}
+
 function applyOutcomeTargets(outcome, commands, errors) {
   const inside = targetFromCommands(commands);
 
@@ -757,8 +794,10 @@ function resolveShot() {
   state.keeper.startX = state.keeper.x;
   if (outcome === "save") {
     state.keeper.targetX = target.x;
-  } else if (Math.random() > 0.5) {
-    state.keeper.targetX = target.x;
+  } else if (outcome === "goal") {
+    state.keeper.targetX = getGoalKeeperTarget(resolved, target);
+  } else if (outcome === "post") {
+    state.keeper.targetX = getPostKeeperTarget(resolved, target);
   } else {
     state.keeper.targetX = randomChoice([canvas.width / 2 - 90, canvas.width / 2, canvas.width / 2 + 90]);
   }
