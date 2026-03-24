@@ -3,6 +3,7 @@
 
 if (window.__freekickBootstrapLoaded) return;
 window.__freekickBootstrapLoaded = true;
+const RUNTIME_VERSION = "20260324a";
 
 async function cleanupLegacyClientCache() {
   try {
@@ -27,7 +28,7 @@ function loadCoreOnce() {
 
   const script = document.createElement("script");
   const runtimeBuster = Math.floor(Date.now() / 3600000);
-  script.src = `core.js?v=20260320a&h=${runtimeBuster}`;
+  script.src = `core.js?v=${RUNTIME_VERSION}&h=${runtimeBuster}`;
   script.async = false;
   script.onload = () => {
     window.__freekickCoreLoaded = true;
