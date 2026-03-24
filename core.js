@@ -778,6 +778,20 @@ function getSaveArmTarget(commands) {
   return map[`${commands.direction}-${commands.height}`] || { ...KEEPER_ARM_NEUTRAL };
 }
 
+function getKeeperCatchPoint(commands, keeperX) {
+  const armTarget = getSaveArmTarget(commands);
+  const dive = Math.max(-26, Math.min(26, (keeperX - canvas.width / 2) * 0.14));
+  const leftHandX = keeperX + armTarget.leftX + dive;
+  const rightHandX = keeperX + armTarget.rightX + dive;
+  const leftHandY = KEEPER_BASE_Y + armTarget.leftY;
+  const rightHandY = KEEPER_BASE_Y + armTarget.rightY;
+
+  return {
+    x: (leftHandX + rightHandX) / 2,
+    y: (leftHandY + rightHandY) / 2,
+  };
+}
+
 function applyOutcomeTargets(outcome, commands, errors) {
   const inside = targetFromCommands(commands);
 
@@ -809,13 +823,6 @@ function resolveShot() {
   state.outcome = outcome;
 
   const target = applyOutcomeTargets(outcome, resolved, errors);
-  state.ball.startX = BALL_START.x;
-  state.ball.startY = BALL_START.y;
-  state.ball.targetX = target.x;
-  state.ball.targetY = target.y;
-  state.ball.controlX = (state.ball.startX + state.ball.targetX) / 2;
-  state.ball.controlY = Math.min(state.ball.startY - 150, target.y - 45);
-  state.ball.speed = resolved.power === "weak" ? 0.016 : resolved.power === "strong" ? 0.032 : 0.022;
 
   state.keeper.startX = state.keeper.x;
   state.keeper.armReach = 0;
@@ -830,6 +837,15 @@ function resolveShot() {
   } else {
     state.keeper.targetX = randomChoice([canvas.width / 2 - 90, canvas.width / 2 + 90]);
   }
+
+  const ballTarget = outcome === "save" ? getKeeperCatchPoint(resolved, state.keeper.targetX) : target;
+  state.ball.startX = BALL_START.x;
+  state.ball.startY = BALL_START.y;
+  state.ball.targetX = ballTarget.x;
+  state.ball.targetY = ballTarget.y;
+  state.ball.controlX = (state.ball.startX + state.ball.targetX) / 2;
+  state.ball.controlY = Math.min(state.ball.startY - 150, ballTarget.y - 45);
+  state.ball.speed = resolved.power === "weak" ? 0.016 : resolved.power === "strong" ? 0.032 : 0.022;
 
   const messages = {
     goal: "GOL",
