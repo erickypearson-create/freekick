@@ -1039,7 +1039,6 @@ function drawBrandBanner() {
   const groupStartX = x + (w - groupWidth) / 2;
 
   const logoCx = groupStartX + 17;
-  const logoCx = x + 28;
   const logoCy = y + h / 2;
   const logoR = 17;
   ctx.fillStyle = "#ff2f3e";
@@ -1073,7 +1072,6 @@ function drawBrandBanner() {
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 28px Arial";
   ctx.fillText(brandText, groupStartX + 46, y + 34);
-  ctx.fillText("WizKick", x + 52, y + 34);
 }
 
 function drawScene() {
