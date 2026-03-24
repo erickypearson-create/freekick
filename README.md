@@ -16,6 +16,8 @@ Abra `http://localhost:4173`.
 
 Cada cobrança tem 3 fases: `direction`, `height` e `power`.
 
+Antes de iniciar a cobrança, o jogador escolhe um nível na régua `GSE + CEFR` (`A1`, `A2`, `B1`, `B2` ou `C1`). As três perguntas da rodada passam a respeitar esse nível selecionado.
+
 Em cada fase:
 1. O jogador escolhe uma opção de comando (ex.: esquerda/meio/direita).
 2. Responde uma pergunta em inglês.

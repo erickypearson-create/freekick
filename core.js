@@ -30,6 +30,8 @@ const ui = {
   activitySection: document.getElementById("activitySection"),
   activityList: document.getElementById("activityList"),
   activitySummary: document.getElementById("activitySummary"),
+  levelRuler: document.getElementById("levelRuler"),
+  selectedLevel: document.getElementById("selectedLevel"),
 };
 
 const STORAGE_KEY = "freekick-question-bank-v11";
@@ -83,6 +85,13 @@ const PENALTY_AREA = {
 const KICKER_ANIMATION_MS = 460;
 
 const LEVEL_SEQUENCE = ["A1", "A2", "B1", "B2", "C1"];
+const LEVEL_META = {
+  A1: { cefr: "A1", gse: "22–29", label: "Iniciante" },
+  A2: { cefr: "A2", gse: "30–42", label: "Básico" },
+  B1: { cefr: "B1", gse: "43–58", label: "Intermediário" },
+  B2: { cefr: "B2", gse: "59–75", label: "Intermediário alto" },
+  C1: { cefr: "C1", gse: "76–84", label: "Avançado" },
+};
 
 function buildChoiceQuestion(prompt, correct, wrong) {
   return { prompt, correct, wrong };
@@ -152,6 +161,7 @@ const state = {
   roundAnswers: {},
   selectedAnswers: {},
   playerChoices: {},
+  selectedLevel: "",
   bank: { mode: "ordered", questions: [], pointer: 0 },
   generated: { usedKeys: [], levelPointer: 0 },
   worksheetActivities: [],
@@ -417,13 +427,53 @@ function resetGeneratedCycle() {
   state.generated.levelPointer = 0;
 }
 
-function nextGeneratedBase() {
-  const allEntries = GENERATED_ENTRIES;
+function describeSelectedLevel() {
+  const meta = LEVEL_META[state.selectedLevel];
+  return meta ? `${meta.cefr} · GSE ${meta.gse} · ${meta.label}` : "Nenhum";
+}
+
+function updateSelectedLevelUi() {
+  if (ui.selectedLevel) {
+    ui.selectedLevel.textContent = describeSelectedLevel();
+  }
+  ui.startBtn.disabled = !state.selectedLevel;
+}
+
+function setSelectedLevel(level) {
+  state.selectedLevel = LEVEL_SEQUENCE.includes(level) ? level : "";
+  updateSelectedLevelUi();
+  renderLevelRuler();
+  persistBank();
+}
+
+function renderLevelRuler() {
+  if (!ui.levelRuler) return;
+  ui.levelRuler.innerHTML = "";
+  LEVEL_SEQUENCE.forEach((level) => {
+    const meta = LEVEL_META[level];
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `level-stop ${state.selectedLevel === level ? "active" : ""}`;
+    button.setAttribute("role", "listitem");
+    button.innerHTML = `
+      <span class="level-stop-cefr">${meta.cefr}</span>
+      <span class="level-stop-gse">GSE ${meta.gse}</span>
+      <span class="level-stop-label">${meta.label}</span>
+    `;
+    button.addEventListener("click", () => setSelectedLevel(level));
+    ui.levelRuler.appendChild(button);
+  });
+}
+
+function nextGeneratedBase(level) {
+  const targetLevel = LEVEL_SEQUENCE.includes(level) ? level : LEVEL_SEQUENCE[0];
+  const allEntries = GENERATED_ENTRIES.filter((entry) => entry.level === targetLevel);
   const unusedEntries = allEntries.filter((entry) => !state.generated.usedKeys.includes(entry.key));
 
   if (!unusedEntries.length) {
-    resetGeneratedCycle();
-    return nextGeneratedBase();
+    state.generated.usedKeys = state.generated.usedKeys.filter((key) => !key.startsWith(`${targetLevel}-`));
+    state.generated.levelPointer = 0;
+    return nextGeneratedBase(targetLevel);
   }
 
   if (state.bank.mode === "random") {
@@ -432,24 +482,14 @@ function nextGeneratedBase() {
     return picked;
   }
 
-  for (let offset = 0; offset < LEVEL_SEQUENCE.length; offset += 1) {
-    const levelIndex = (state.generated.levelPointer + offset) % LEVEL_SEQUENCE.length;
-    const level = LEVEL_SEQUENCE[levelIndex];
-    const candidates = unusedEntries.filter((entry) => entry.level === level);
-    if (!candidates.length) continue;
-    const picked = candidates[0];
-    state.generated.usedKeys.push(picked.key);
-    state.generated.levelPointer = (levelIndex + 1) % LEVEL_SEQUENCE.length;
-    return picked;
-  }
-
-  const fallback = unusedEntries[0];
-  state.generated.usedKeys.push(fallback.key);
-  return fallback;
+  const picked = unusedEntries[state.generated.levelPointer % unusedEntries.length] || unusedEntries[0];
+  state.generated.usedKeys.push(picked.key);
+  state.generated.levelPointer = (state.generated.levelPointer + 1) % Math.max(unusedEntries.length, 1);
+  return picked;
 }
 
-function buildRandomEnglishQuestion(dimension) {
-  const base = nextGeneratedBase();
+function buildRandomEnglishQuestion(dimension, level) {
+  const base = nextGeneratedBase(level);
   const options = shuffle([base.correct, ...base.wrong]).slice(0, 4);
   return {
     dimension,
@@ -464,7 +504,11 @@ function buildRandomEnglishQuestion(dimension) {
 function loadBank() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      renderLevelRuler();
+      updateSelectedLevelUi();
+      return;
+    }
     const parsed = JSON.parse(raw);
     state.bank = {
       mode: parsed.mode === "random" ? "random" : "ordered",
@@ -477,13 +521,18 @@ function loadBank() {
       levelPointer: Number.isInteger(parsed.generated?.levelPointer) ? parsed.generated.levelPointer : 0,
     };
     state.worksheetActivities = Array.isArray(parsed.worksheetActivities) ? parsed.worksheetActivities : [];
+    state.selectedLevel = LEVEL_SEQUENCE.includes(parsed.selectedLevel) ? parsed.selectedLevel : "";
     ui.modeSelect.value = state.bank.mode;
     renderWorksheetActivities();
+    renderLevelRuler();
+    updateSelectedLevelUi();
   } catch {
     state.bank = { mode: "ordered", questions: [], pointer: 0 };
     state.generated = { usedKeys: [], levelPointer: 0 };
     state.worksheetActivities = [];
     renderWorksheetActivities();
+    renderLevelRuler();
+    updateSelectedLevelUi();
   }
 }
 
@@ -492,7 +541,8 @@ function nextUploadedQuestion(dimension) {
   if (!source.length) return null;
   for (let i = 0; i < source.length; i += 1) {
     const idx = (state.bank.pointer + i) % source.length;
-    if (source[idx].dimension === dimension) {
+    const matchesLevel = !source[idx].level || source[idx].level === state.selectedLevel;
+    if (source[idx].dimension === dimension && matchesLevel) {
       state.bank.pointer = idx + 1;
       return source[idx];
     }
@@ -501,7 +551,7 @@ function nextUploadedQuestion(dimension) {
 }
 
 function questionForDimension(dimension) {
-  return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension);
+  return nextUploadedQuestion(dimension) || buildRandomEnglishQuestion(dimension, state.selectedLevel);
 }
 
 function persistBank() {
@@ -509,6 +559,7 @@ function persistBank() {
     mode: state.bank.mode,
     questions: state.bank.questions,
     generated: state.generated,
+    selectedLevel: state.selectedLevel,
     worksheetActivities: state.worksheetActivities,
   }));
 }
@@ -523,6 +574,10 @@ function syncQuestionMode() {
 }
 
 function startRound() {
+  if (!state.selectedLevel) {
+    ui.result.textContent = "Escolha um nível na régua GSE + CEFR antes de iniciar.";
+    return;
+  }
   syncQuestionMode();
   state.phase = "quiz";
   state.index = 0;
@@ -543,8 +598,8 @@ function startRound() {
   ui.result.textContent = "Escolha a opção da fase e responda a pergunta.";
   ui.phaseActionBtn.classList.add("hidden");
   ui.summary.textContent = state.bank.questions.length
-    ? "Banco enviado carregado."
-    : "Perguntas aleatórias em inglês.";
+    ? `Banco enviado carregado. Nível atual: ${describeSelectedLevel()}.`
+    : `Perguntas aleatórias em inglês. Nível atual: ${describeSelectedLevel()}.`;
 
   showCurrentQuestion();
   draw();
@@ -1196,6 +1251,8 @@ ui.downloadTemplateBtn.addEventListener("click", downloadTemplate);
 ui.modeSelect.addEventListener("change", syncQuestionMode);
 
 loadBank();
+renderLevelRuler();
+updateSelectedLevelUi();
 renderWorksheetActivities();
 draw();
 

@@ -41,7 +41,8 @@ body {
 
 .hud,
 .upload-box,
-.round-box {
+.round-box,
+.level-box {
   margin-top: 0.75rem;
   background: #0d1f34;
   border-radius: 8px;
@@ -63,9 +64,76 @@ h1 {
   margin: 1rem 0;
 }
 
-.upload-box h2 {
+.upload-box h2,
+.level-box h2 {
   margin: 0 0 0.55rem;
   font-size: 1rem;
+}
+
+.level-box {
+  margin-bottom: 1rem;
+}
+
+.level-box-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.selected-level {
+  min-width: 140px;
+  text-align: right;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.selected-level span {
+  color: #9ec7ec;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.selected-level strong {
+  color: #fff3b1;
+}
+
+.level-ruler {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.level-stop {
+  margin: 0;
+  min-height: 90px;
+  background: linear-gradient(180deg, #345f86, #1d3d5d);
+  border: 1px solid #5f8db4;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: start;
+}
+
+.level-stop.active {
+  background: linear-gradient(180deg, #f2c35f, #bf7c19);
+  border-color: #ffd892;
+  color: #13263c;
+}
+
+.level-stop-cefr {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.level-stop-gse {
+  font-size: 0.88rem;
+}
+
+.level-stop-label {
+  font-size: 0.8rem;
+  opacity: 0.92;
 }
 
 .upload-box input,
@@ -158,6 +226,19 @@ button:disabled {
   }
 
   .round-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .level-box-header,
+  .selected-level {
+    text-align: left;
+  }
+
+  .level-box-header {
+    flex-direction: column;
+  }
+
+  .level-ruler {
     grid-template-columns: 1fr;
   }
 }
