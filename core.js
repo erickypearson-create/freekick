@@ -83,6 +83,12 @@ const PENALTY_AREA = {
   bottom: canvas.height - 26,
 };
 const KICKER_ANIMATION_MS = 460;
+const KEEPER_ARM_NEUTRAL = {
+  leftX: -43,
+  leftY: 8,
+  rightX: 43,
+  rightY: 8,
+};
 
 const LEVEL_SEQUENCE = ["A1", "A2", "B1", "B2", "C1"];
 const LEVEL_META = {
@@ -182,6 +188,9 @@ const state = {
     x: canvas.width / 2,
     startX: canvas.width / 2,
     targetX: canvas.width / 2,
+    armReach: 0,
+    armStart: { ...KEEPER_ARM_NEUTRAL },
+    armTarget: { ...KEEPER_ARM_NEUTRAL },
   },
   kicker: {
     x: BALL_START.x,
@@ -587,6 +596,9 @@ function startRound() {
   state.roundQuestions = DIMENSIONS.map((d) => questionForDimension(d));
   state.outcome = "-";
   state.keeper.x = canvas.width / 2;
+  state.keeper.armReach = 0;
+  state.keeper.armStart = { ...KEEPER_ARM_NEUTRAL };
+  state.keeper.armTarget = { ...KEEPER_ARM_NEUTRAL };
   state.kicker.y = state.kicker.runStartY;
   state.kicker.runProgress = 0;
   state.kicker.legSwing = 0;
@@ -750,6 +762,22 @@ function getPostKeeperTarget(commands, ballTarget) {
   return Math.max(ballTarget.x + 20, nonCatchX);
 }
 
+function getSaveArmTarget(commands) {
+  const map = {
+    "left-high": { leftX: -62, leftY: -36, rightX: -34, rightY: -46 },
+    "left-mid": { leftX: -62, leftY: 0, rightX: -38, rightY: -8 },
+    "left-low": { leftX: -56, leftY: 30, rightX: -34, rightY: 24 },
+    "center-high": { leftX: -10, leftY: -58, rightX: 10, rightY: -58 },
+    "center-mid": { ...KEEPER_ARM_NEUTRAL },
+    "center-low": { leftX: -20, leftY: 40, rightX: 20, rightY: 40 },
+    "right-high": { leftX: 34, leftY: -46, rightX: 62, rightY: -36 },
+    "right-mid": { leftX: 38, leftY: -8, rightX: 62, rightY: 0 },
+    "right-low": { leftX: 34, leftY: 24, rightX: 56, rightY: 30 },
+  };
+
+  return map[`${commands.direction}-${commands.height}`] || { ...KEEPER_ARM_NEUTRAL };
+}
+
 function applyOutcomeTargets(outcome, commands, errors) {
   const inside = targetFromCommands(commands);
 
@@ -790,6 +818,9 @@ function resolveShot() {
   state.ball.speed = resolved.power === "weak" ? 0.016 : resolved.power === "strong" ? 0.032 : 0.022;
 
   state.keeper.startX = state.keeper.x;
+  state.keeper.armReach = 0;
+  state.keeper.armStart = { ...KEEPER_ARM_NEUTRAL };
+  state.keeper.armTarget = outcome === "save" ? getSaveArmTarget(resolved) : { ...KEEPER_ARM_NEUTRAL };
   if (outcome === "save") {
     state.keeper.targetX = target.x;
   } else if (outcome === "goal") {
@@ -863,6 +894,7 @@ function animateShot() {
     state.ball.x = (inv * inv * state.ball.startX) + (2 * inv * t * state.ball.controlX) + (t * t * state.ball.targetX);
     state.ball.y = (inv * inv * state.ball.startY) + (2 * inv * t * state.ball.controlY) + (t * t * state.ball.targetY);
     state.keeper.x = state.keeper.startX + (state.keeper.targetX - state.keeper.startX) * Math.min(1, t * 1.25);
+    state.keeper.armReach = state.outcome === "save" ? Math.min(1, t * 1.5) : 0;
 
     draw();
     requestAnimationFrame(step);
@@ -918,6 +950,11 @@ function drawKeeper() {
   const cx = state.keeper.x;
   const cy = KEEPER_BASE_Y;
   const dive = Math.max(-26, Math.min(26, (state.keeper.x - canvas.width / 2) * 0.14));
+  const armT = state.keeper.armReach;
+  const leftArmX = state.keeper.armStart.leftX + ((state.keeper.armTarget.leftX - state.keeper.armStart.leftX) * armT);
+  const leftArmY = state.keeper.armStart.leftY + ((state.keeper.armTarget.leftY - state.keeper.armStart.leftY) * armT);
+  const rightArmX = state.keeper.armStart.rightX + ((state.keeper.armTarget.rightX - state.keeper.armStart.rightX) * armT);
+  const rightArmY = state.keeper.armStart.rightY + ((state.keeper.armTarget.rightY - state.keeper.armStart.rightY) * armT);
 
   ctx.fillStyle = "#1f2730";
   ctx.beginPath();
@@ -937,9 +974,9 @@ function drawKeeper() {
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(cx - 15, cy - 2);
-  ctx.lineTo(cx - 43 + dive, cy + 8);
+  ctx.lineTo(cx + leftArmX + dive, cy + leftArmY);
   ctx.moveTo(cx + 15, cy - 2);
-  ctx.lineTo(cx + 43 + dive, cy + 8);
+  ctx.lineTo(cx + rightArmX + dive, cy + rightArmY);
   ctx.moveTo(cx - 9, cy + 30);
   ctx.lineTo(cx - 12 + dive * 0.2, cy + 49);
   ctx.moveTo(cx + 9, cy + 30);
